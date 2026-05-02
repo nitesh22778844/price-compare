@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
+from pydantic import ValidationError
 
 from app.models.schemas import ChatMessage, ProductListing, ProductQuery
 
@@ -78,8 +79,6 @@ def _make_listing(**kwargs) -> dict:
         review_count=5000,
         rank=1,
         product_url="https://amazon.in/dp/x",
-        image_url=None,
-        availability="In Stock",
     )
     defaults.update(kwargs)
     return defaults
@@ -155,15 +154,11 @@ def test_products_search_returns_empty_list(client):
 
 
 def test_chat_message_roundtrip():
-    from app.models.schemas import ChatMessage
-
     m = ChatMessage(role="user", content="hello")
     assert ChatMessage.model_validate(m.model_dump()).content == "hello"
 
 
 def test_chat_message_invalid_role():
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
         ChatMessage(role="admin", content="hi")
 
@@ -175,8 +170,6 @@ def test_product_query_roundtrip():
 
 
 def test_product_query_empty_string_invalid():
-    from pydantic import ValidationError
-
     with pytest.raises(ValidationError):
         ProductQuery(query="")
 

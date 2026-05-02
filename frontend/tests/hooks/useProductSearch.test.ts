@@ -31,7 +31,7 @@ describe("useProductSearch", () => {
         id: "1", title: "Phone", source: "Amazon",
         current_price: 5000, original_price: null, discount: null,
         rating: null, review_count: null, rank: null,
-        product_url: null, image_url: null, availability: null,
+        product_url: null,
       },
     ];
     vi.spyOn(globalThis, "fetch").mockResolvedValue(

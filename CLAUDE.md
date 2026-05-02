@@ -1,166 +1,138 @@
-# Product Comparison Chatbot — claude.md
->This file is the source of truth for Claude (or any AI coding agent) when building, extending, or debugging this application. Read it fully before writing any code.
+# Product Comparison Chatbot — CLAUDE.md
+
+> Source of truth for Claude (or any AI coding agent) when building, extending, or debugging this application. Read fully before writing code.
+
 ---
 
 ## 1. Project Overview
 
-A web application where a user chats with an AI assistant to describe a product they're interested in (e.g., "iPhone 15 Pro 256GB"). The assistant interprets the request, queries the `Poduct__c` ustom object in Salesforce, and renders the top matches per source as a comparison table on the right side of the screen.
+Web app where the user chats with an AI assistant to describe a product (e.g., *"iPhone 15 Pro 256GB"*). The assistant calls a tool, the backend queries the `Product__c` custom object in Salesforce, and the right-hand pane renders the top 3 matches per source as a comparison table.
 
 **Core flow**
-`
-User → Chat UI → OpenRouter LLM (intent + entity extraction)
-     → Backend API → Salesforce REST API (SOSL/SOQL on Product__c)
-     → Top 3 matches per source → Frontend comparison table
-`
---
 
-## 2. Tech Stack (Defaults)
+```
+User → Chat UI → /api/chat → OpenRouter LLM (tool call: search_products)
+                          → /api/products/search → Salesforce REST (SOQL on Product__c)
+                          → Python ranking + grouping (top 3 per source)
+                          → Frontend ComparisonTable
+```
 
-| Layer            | Choice                                       | Notes                                          |
-| ---------------- | -------------------------------------------- | ---------------------------------------------- |
-| Frontend         | React 18 + Vite + TypeScript + Tailwind CSS  | Chosen for speed and component ergonomics.     |
-| UI components    | shadcn/ui + lucide-react icons               | Professional, accessible defaults.             |
-| State management | React Context + `ueReducer` or Zustand)    | No Redux unless complexity demands it.         |
-| Backend          | FastAPI (Python 3.11+)                       | Async, typed, OpenAPI docs out of the box.     |
-| HTTP client      | `htpx` async) on backend, `ftch` n FE    |                                                |
-| Salesforce SDK   | `smple-salesforce` *or** raw `htpx`      | `smple-salesforce` or productivity; raw httpx if you want full control over JWT flow. |
-| LLM gateway      | OpenRouter API                               | Model is configurable via env var.             |
-| Testing — FE     | Vitest + React Testing Library + Playwright  | Unit + component + E2E.                        |
-| Testing — BE     | pytest + pytest-asyncio + httpx mock + responses | Unit + integration; Salesforce mocked.     |
-| Linting          | ESLint + Prettier (FE), ruff + black (BE)    |                                                |
-| Package mgmt     | pnpm (FE), uv or pip (BE)                    |                                                |
+---
+
+## 2. Tech Stack (As Built)
+
+| Layer            | Choice                                                | Notes                                          |
+| ---------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| Frontend         | React 18 + Vite + TypeScript + Tailwind CSS           | Plain Tailwind, no shadcn/ui.                  |
+| UI icons         | `lucide-react`                                        | Sparkles, Send, Star, ExternalLink.            |
+| State            | React `useState` + custom hooks (`useChat`, `useProductSearch`) | No Redux/Zustand.                    |
+| Backend          | FastAPI (Python 3.11+) — async                        | OpenAPI at `/docs`.                            |
+| HTTP             | `httpx` async (backend), `fetch` (frontend)           |                                                |
+| Salesforce       | Raw `httpx` against the REST API (no SDK)             | OAuth 2.0 Client Credentials, in-memory cache. |
+| LLM gateway      | OpenRouter API                                        | Model configurable via `OPENROUTER_MODEL`.     |
+| FE testing       | Vitest + React Testing Library; Playwright for E2E    |                                                |
+| BE testing       | pytest + pytest-asyncio + respx + pytest-cov          | Salesforce + OpenRouter both mocked.           |
+| Linting          | ESLint + tsc (FE); ruff + black (BE)                  |                                                |
+| Package mgmt     | pnpm (FE); pip + pyproject (BE)                       |                                                |
 
 ---
 
 ## 3. Repository Layout
 
-`
-
-oduct-compare/
-├── claude.md                  # This file
-├── README.md                  # Human-facing setup
-├── .env.example               # All env vars documented
-├── docker-compose.yml         # Optional: one-command local run
+```
+price-compare/
+├── CLAUDE.md
+├── README.md
+├── .env.example
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── chat/          # ChatWindow, MessageBubble, ChatInput
-│   │   │   └── results/       # ComparisonTable, SourceBadge, RatingStars
-│   │   ├── hooks/             # useChat, useProductSearch
-│   │   ├── lib/               # api client, types, utils, source-theme
-│   │   ├── pages/             # App.tsx, layout
-│   │   └── styles/
-│   ├── tests/
+│   │   │   ├── chat/        # ChatWindow, MessageBubble, ChatInput
+│   │   │   └── results/     # ComparisonTable, SourceBadge, RatingStars
+│   │   ├── hooks/           # useChat, useProductSearch
+│   │   ├── lib/             # api, types, source-theme, strings
+│   │   ├── pages/           # App.tsx
+│   │   └── styles/          # index.css (Tailwind + animations)
+│   ├── tests/               # vitest unit + Playwright e2e
 │   └── package.json
 └── backend/
     ├── app/
-    │   ├── main.py            # FastAPI entrypoint
-    │   ├── routers/
-    │   │   ├── chat.py        # /api/chat
-    │   │   └── products.py    # /api/products/search
-    │   ├── services/
-    │   │   ├── openrouter.py  # LLM client
-    │   │   ├── salesforce.py  # Auth + SOSL/SOQL client
-    │   │   └── product_search.py # Orchestrates SF query + ranking
-    │   ├── models/            # Pydantic schemas
-    │   └── core/              # config, logging
-    ├── tests/
+    │   ├── main.py          # FastAPI factory + CORS + global handler
+    │   ├── routers/         # chat.py, products.py
+    │   ├── services/        # openrouter.py, salesforce.py, product_search.py
+    │   ├── models/          # schemas.py (Pydantic)
+    │   └── core/            # config.py, logging.py (with secret redaction)
+    ├── tests/               # pytest + fixtures/salesforce/*.json
     └── pyproject.toml
-`
---
+```
+
+---
 
 ## 4. Frontend Specification
 
 ### 4.1 Layout
 
-A two-pane responsive layout:
+Two-pane responsive layout:
+- **Left (~38%):** chat panel.
+- **Right (~62%):** comparison table that updates with each search.
+- Mobile: single column, table renders below the chat.
 
-- Left pane (≈ 35–40% width on desktop):** Chat interface.
-- Right pane (≈ 60–65% width on desktop):** A single **comparison table** that updates with each new search.
--  mobile: single column, table appears below the chat.
+### 4.2 Chat UI
 
-The visual treatment must feel professional and considered — not a generic AI-app template. Use whitespace generously, limit font weights, and pick one accent color plus the per-source colors below.
+- User vs assistant messages styled distinctly (rounded bubbles, AI avatar, subtle shadow).
+- Animated 3-dot typing indicator while a request is in flight.
+- Auto-scroll to latest message; respects user scroll-up to read history (sticky-bottom only when near bottom).
+- Markdown rendering for assistant messages via `react-markdown`.
+- Multi-line `<textarea>`: Enter to send, Shift+Enter for newline; auto-grows up to 120px.
+- Input + send button disabled while a request is in flight.
+- Empty state shows 3 example prompts (`STRINGS.chatExamplePrompts`) — clicking sends immediately.
+- Chat history is in-memory React state only (no `localStorage`).
 
-### 4.2 Chat UI Requirements
+### 4.3 Comparison Table
 
-- stinct styling for user vs assistant messages (rounded bubbles, avatars, subtle shadow).
-- ooth typing indicator (three-dot animation) while the backend is working.
-- to-scroll to latest message; preserve scroll position when user scrolls up to read history.
-- rkdown rendering in assistant messages (lists, bold, links).
-- lti-line input with Enter to send, Shift+Enter for newline.
-- sable input while a request is in flight; show a clear loading state.
-- pty state with 2–3 example prompts ("Find me a gaming laptop under ₹80,000", etc.).
-- rsistent chat history across the session (in-memory React state — **do not use localStorage** since artifacts/embedded contexts may forbid it).
+- Rows are **grouped by source** with a section header (`{Source} — N results`).
+- Each row carries a **left border in the source's accent color** + a colored chip in the *Store* column.
+- Top row of each group gets a **"Top match"** badge.
+- Sticky table header. Numeric columns right-aligned. INR currency formatting.
+- Discount rendered as a green pill; rating rendered as filled stars + numeric value (`RatingStars`).
+- Loading: 5 shimmer rows. Empty: friendly message. Error: red headline + detail.
 
-### 4.3 Comparison Table — Catchy & Source-Differentiated
+**Per-source theme** lives in `frontend/src/lib/source-theme.ts`:
 
-This is a key visual element. The table must make it **instantly obvious** which row belongs to which source.
+| Source           | Accent    | Chip label |
+| ---------------- | --------- | ---------- |
+| Amazon           | `#FF9900` | Amazon     |
+| Flipkart         | `#2874F0` | Flipkart   |
+| Croma            | `#27C14D` | Croma      |
+| Reliance Digital | `#C8102E` | RD         |
+| (default)        | `#6B7280` | source name |
 
-**Per-source visual identity** (ship a `surce-theme.ts` ookup):
+Adding a new source = one entry in `THEMES`.
 
-| Source     | Accent color  | Logo / chip                    | Row treatment                       |
-| ---------- | ------------- | ------------------------------ | ----------------------------------- |
-| Amazon     | `#F9900`    | Amazon logo or "A" monogram    | Left border 4px in accent color     |
-| Flipkart   | `#874F0`    | Flipkart logo or "F" monogram  | Left border 4px in accent color     |
-| Croma      | `#2714D`    | "Croma" wordmark               | Left border 4px in accent color     |
-| Reliance Digital | `#40E20`  "RD" monogram               | Left border 4px in accent color     |
-| (default)  | neutral gray  | first letter of source         | Left border 4px in accent color     |
+**Columns** (in render order):
 
-Treatment rules:
-- ch row carries a **left border** in the source accent color and a small **source chip** in the Source column with that color as background and white text.
-- Group rows by source** with a subtle section header showing the source name + count ("Amazon — 3 results"). Within each group, sort by best match first.
-- st-match row in each group gets a small "Top match" badge.
-- bra striping is **off** (groups + accent borders carry the visual hierarchy).
-- icky header. Numeric columns right-aligned. Currency localized to INR.
-- scount % rendered as a green pill; rating rendered as filled stars + numeric value.
-- pty state, loading skeleton (5 shimmer rows), and error state are all designed — not a fallback `<>Error</p>`.
-
-**Columns** (drawn from `Poduct__c`  see §5.4):
-
-| Column            | Source field          | Notes                                            |
-| ----------------- | --------------------- | ------------------------------------------------ |
-| Product name      | `title__c`           | Truncate with tooltip on overflow.               |
-| Source            | `source__c`          | Colored chip, see above.                         |
-| Current price     | `current_price__c`           | INR formatting.                                  |
-| Original price    | `original_price__c`  | Strike-through if higher than current.           |
-| Discount %        | `discount__c`        | Computed if not provided.                        |
-| Rating            | `rating__c`          | Stars + numeric.                                 |
-| Number of reviews | `review_count__c`    | Compact format (1.2k, 12k).                      |
-| Rank              | `rank__c`            | Vendor's category rank if available.             |
-| Link              | `product_url__c`             | "View" button opens in new tab.                  |
-
-
-Salesforce product__c schema
-
-availability	availability__c	Text(100)		False	
-brand	brand__c	Text(100)		False	
-Created By	CreatedById	Lookup(User)		False	
-current_price	current_price__c	Number(16, 2)		False	
-discount	discount__c	Percent(18, 0)		False	
-image_url	image_url__c	URL(255)		False	
-Last Modified By	LastModifiedById	Lookup(User)		False	
-model	model__c	Text(100)		False	
-original_price	original_price__c	Number(16, 2)		False	
-Owner	OwnerId	Lookup(User,Group)		True	
-product_url	product_url__c	URL(255)		False	
-Products Name	Name	Auto Number		True	
-rank	rank__c	Number(18, 0)		False	
-rating	rating__c	Text(100)		False	
-review_count	review_count__c	Number(18, 0)		False	
-scraped_at	scraped_at__c	Text(100)		False	
-source	source__c	Text(100)		False	
-specifications	specifications__c	Text(100)		False	
-title	title__c	Text(255) (External ID)
+| Column   | Backend field    | Notes                                       |
+| -------- | ---------------- | ------------------------------------------- |
+| Product  | `title`          | Truncated to 2 lines; `title=` tooltip.     |
+| Store    | `source`         | Colored chip via `SourceBadge`.             |
+| Price    | `current_price`  | INR formatted, no fraction.                 |
+| MRP      | `original_price` | Strike-through if higher than current.      |
+| Discount | `discount`       | Green pill `-NN%` if > 0; computed if null. |
+| Rating   | `rating`         | Stars (lucide `Star`) + numeric value.      |
+| Reviews  | `review_count`   | Compact: `1.2k`, `1.5L`.                    |
+| Rank     | `rank`           | `#N` or `—`.                                |
+| (link)   | `product_url`    | "View" → opens in new tab.                  |
 
 ### 4.4 Frontend ↔ Backend Contract
 
-- ST /api/chat`
- - **Body:** `{messages: ChatMessage[] }`  full conversation history each call (LLM is stateless).
-  - **Response:** `{reply: string, productQuery: ProductQuery | null }`
- - If `poductQuery` s non-null, frontend immediately calls `/pi/products/search` ith it.
-- ST /api/products/search`
- - **Body:** `PoductQuery` see §5.6).
-  - **Response:** `{results: ProductListing[] }`  top 3 per source, UI handles grouping.
+**`POST /api/chat`**
+- Request: `{ messages: ChatMessage[] }` — full conversation history every call (LLM is stateless server-side).
+- Response: `{ reply: string, product_query: ProductQuery | null }`
+- If `product_query` is non-null, the frontend immediately calls `/api/products/search` with it.
+
+**`POST /api/products/search`**
+- Request: `ProductQuery` (see §5.6).
+- Response: `{ results: ProductListing[] }` — already grouped (sorted source-by-source) and capped at 3 per source.
 
 ---
 
@@ -169,233 +141,259 @@ title	title__c	Text(255) (External ID)
 ### 5.1 Responsibilities
 
 1. Accept chat messages from the frontend.
-2. Forward conversation history to the configured OpenRouter model with tool calling.
-3. When the model emits a `PoductQuery`,query Salesforce's `Poduct__c` bject.
-4. Match `Ttle__c` gainst the user input, return the **top 3 best-matched records per `Surce__c`*.
-5. Normalize Salesforce records into the `PoductListing` chema and return them.
+2. Forward full conversation history to the configured OpenRouter model with a `search_products` function tool.
+3. When the model emits a `ProductQuery`, query Salesforce's `Product__c` object via SOQL `LIKE`.
+4. Rank by `title__c` match quality, group by `source__c`, return top 3 per source.
+5. Normalize Salesforce records into `ProductListing`.
 
-### 5.2 OpenRouter Integration *(nchanged)*
+### 5.2 OpenRouter Integration (`app/services/openrouter.py`)
 
-- dpoint: `https://openrouter.ai/api/v1/chat/completions`.
-- th: `Athorization: Bearer ${OPENROUTER_API_KEY}` env var).
-- del: configurable via `OENROUTER_MODEL` e.g., `athropic/claude-3.5-sonnet`,`oenai/gpt-4o`,`mta-llama/llama-3.3-70b-instruct`)
-- Always** pass the full prior conversation in `mssages`  the LLM has no memory between calls.
-- e **function/tool calling** so the model returns a structured `PoductQuery` ather than free-form text the backend has to parse with regex.
+- Endpoint: `https://openrouter.ai/api/v1/chat/completions`.
+- Auth: `Authorization: Bearer ${OPENROUTER_API_KEY}`.
+- Model: `OPENROUTER_MODEL` (default `openai/gpt-oss-120b`).
+- Forwards full conversation each call (LLM has no memory).
+- Uses **function/tool calling** — the model returns a structured `search_products` call, never free-form parsing.
+- Sets `HTTP-Referer` and `X-Title` headers (OpenRouter ranking).
 
-**System prompt outline** (refine during build):
-> Yu are a helpful shopping assistant. When the user describes a product they want to compare or buy, call the `serch_products` tol with the structured query. Otherwise, reply conversationally to clarify what they're looking for. Never invent prices or ratings.
+**System prompt strategy:**
+- Instruct the model to call `search_products` for any product mention, even vague ("any pen drive", "a gaming laptop").
+- Strip filler words from the `query` argument before passing.
+- Only reply conversationally for clear non-product turns (greetings, thanks).
+- Never invent prices, ratings, or availability.
 
-### 5.3 Salesforce Integration
+**Tool schema:** `query` (required), plus optional `category`, `min_price`, `max_price`, `brand`, `sources`.
+
+### 5.3 Salesforce Integration (`app/services/salesforce.py`)
 
 #### 5.3.1 Authentication — OAuth 2.0 Client Credentials Flow
 
-Server-to-server, no interactive login, no per-user JWT signing. Simpler than JWT for backend services where a single integration identity is acceptable.
+Server-to-server, no interactive login.
 
-Required setup in Salesforce:
-- A*Connected App** with **"Enable Client Credentials Flow"** turned on (under OAuth Policies).
-- Oth scope: `ap` (dd `reresh_token` oly if you also need refresh tokens — Client Credentials typically does not).
-- A*"Run As" user** assigned to the Connected App (this is the integration identity all calls run as).
-- Csumer Key + Consumer Secret captured securely.
+Salesforce setup required:
+- **Connected App** with **"Enable Client Credentials Flow"**.
+- OAuth scope: `api`.
+- A **"Run As" user** assigned (integration identity).
+- Consumer Key + Consumer Secret captured securely.
 
 Backend flow:
-1. POST to `https://login.salesforce.com/services/oauth2/token` (or your My Domain URL) with:
-   ```
-grant_type=client_credentials
-   client_id=<consumer key>
-   client_secret=<consumer secret>
-   ```
+1. POST to `SF_TOKEN_URL` with form body `grant_type=client_credentials`, `client_id`, `client_secret`.
+2. Response yields `access_token` + `instance_url`. Cached in memory; refreshed ~5 min before expiry.
+3. All data calls go to `<instance_url>/services/data/v{SF_API_VERSION}/query?q=<SOQL>` with `Bearer <access_token>`.
+4. On 401 → invalidate cache, re-auth once, retry the call. If it 401s again, surface the error.
+5. Cache and access shielded by an `asyncio.Lock` to prevent token-fetch storms.
 
-`Cotent-Type: application/x-www-form-urlencoded`.
-. Response returns `acess_token` +`intance_url`. ache them in memory until ~5 min before expiry, then refresh by repeating step 1.
-3. All subsequent API calls go to `<istance_url>/services/data/vXX.0/...` wth `Auhorization: Bearer <access_token>`.
-. On a 401 from any data API call, invalidate the cache, request a new token once, and retry the original call. If it still fails, surface the error.
+**Security:**
+- `SF_CLIENT_SECRET` only in env vars / secrets manager.
+- A `_RedactingFilter` in `app/core/logging.py` scrubs `SF_CLIENT_SECRET` and `OPENROUTER_API_KEY` from any log message that contains them.
+- Authorization headers and tokens are never logged.
 
-**Security notes:**
-Store SF_CLIENT_SECRET in env vars or a secrets manager — never commit it.
-Never log the secret, the token, or the full Authorization header.
-For production, prefer a My Domain URL (https://<your-domain>.my.salesforce.com) over login.salesforce.com.
+#### 5.3.2 Querying `Product__c`
 
-#### 5.3.2 Querying Product__c — match on Title__c
+**Strategy:** SOQL `LIKE`, parameterized via SF's request body — never concatenate user input directly. We pull up to 200 records and rank in Python.
 
-**Strategy: SOQL with LIKE (substring match).** Simple, predictable, and good enough for the matching quality this app needs. We pull more records than we need, then rank and slice in Python.
+**Tokenization:**
+- Split user query on whitespace.
+- Drop stopwords (`_STOPWORDS` in `salesforce.py`: filler verbs, articles, "price", "best", etc.).
+- Cap at 5 tokens to keep SOQL length sane.
+- If everything was filtered out, fall back to the raw query as a single substring.
 
-**SOQL query template** (parameterized — do **not** string-concatenate user input directly):
-sql
-SELECT Id, Name, Title__c, Source__c, Price__c, Original_Price__c,
-       Discount__c, Rating__c, Review_Count__c, Rank__c, URL__c, Image_URL__c
+**`escape_soql`** order (mandatory): `\` first, then `'`, `%`, `_`. Empty/whitespace-only input is rejected with `ValueError` before the SF call.
+
+**SOQL template** (built by `_build_soql`):
+```sql
+SELECT Id, Name, title__c, source__c, current_price__c, original_price__c,
+       discount__c, rating__c, review_count__c, rank__c, product_url__c
 FROM Product__c
-WHERE Title__c LIKE :likePattern
-  AND Source__c != null
-ORDER BY Source__c ASC, Rating__c DESC NULLS LAST, Review_Count__c DESC NULLS LAST
-LIMIT 200
+WHERE <where_clause> AND source__c != null AND source__c != ''
+ORDER BY source__c ASC, rating__c DESC NULLS LAST,
+         review_count__c DESC NULLS LAST
+LIMIT <SF_QUERY_LIMIT>
+```
 
-…where likePattern = f"%{escape_soql(user_query)}%".
+**Two-stage matching strategy:**
+1. **AND-of-tokens** (primary): `title__c LIKE '%t1%' AND title__c LIKE '%t2%' AND ...` — each escaped token must appear.
+2. **OR-of-tokens** (fallback): triggered only when the AND query returns zero records *and* there are >1 tokens. Surfaces partial matches; Python ranking re-prioritizes full-query hits.
 
-**Escaping is mandatory.** escape_soql must backslash-escape \, ', %, and _ in that order (escape \ first to avoid double-escaping). Reject empty or whitespace-only queries with a 400 before hitting Salesforce.
+#### 5.3.3 Ranking + grouping (`app/services/product_search.py`)
 
-**Optional improvement — token-AND match.** If a single substring like %iphone 15 pro% is too restrictive (the user's word order won't match the title's), split the input into tokens and AND them:
-sql
-WHERE Title__c LIKE :p1 AND Title__c LIKE :p2 AND Title__c LIKE :p3
+`rank_and_group(records, query, per_source=3)`:
 
-Cap at 5 tokens to keep query length sane. Document whichever variant ships.
+1. Group raw records by `source__c`.
+2. Score each record (`_score`):
+   - **+10** if the full query is a case-insensitive substring of `title__c`.
+   - **+1** per token whole-word match.
+   - Tie-break: `rating__c` desc, then `review_count__c` desc.
+3. Within each source, sort by score desc and keep top `per_source`.
+4. Normalize each kept record (`_normalize`) into `ProductListing`. If `discount__c` is null but both prices are present and positive, compute it as `round((1 - current/original) * 100)`.
+5. **Don't pad** — if a source has fewer than `per_source` matches, return what's available.
 
-**Ranking and top-3-per-source happens in Python**, not SOQL (Salesforce has no per-group LIMIT):
+`_ci_get` does case-insensitive field lookup so we tolerate either `Title__c` or `title__c` casing from Salesforce.
 
-1. Group results by Source__c.
-2. Within each group, score each record by how well Title__c matches the user input. A simple, dependency-free score that works well:
-   - +10 if the full query appears as a substring in Title__c (case-insensitive).
-   - +1 per matching token (whole-word match, case-insensitive).
-   - Tie-break by Rating__c desc, then Review_Count__c desc.
-3. Keep the top 3 per group. If a source has fewer than 3 matches, return what's available — don't pad.
-4. Return the flat list of ProductListing[].
+### 5.4 `Product__c` Schema (Salesforce org)
 
-#### 5.3.3 Pagination & limits
+Fields the backend reads (case-insensitive):
 
-Product__c may have many rows per source. Always cap with LIMIT 200 on the SF side, then rank and filter to top 3 per source in Python. If a source has fewer than 3 matches, return what's available — don't pad.
+| API name             | Type             | Used as           |
+| -------------------- | ---------------- | ----------------- |
+| `Id`                 | (system)         | listing id        |
+| `Name`               | Auto Number      | title fallback    |
+| `title__c`           | Text(255), External ID | display title + match target |
+| `source__c`          | Text(100)        | grouping key      |
+| `current_price__c`   | Number(16, 2)    | price             |
+| `original_price__c`  | Number(16, 2)    | MRP / strike-through |
+| `discount__c`        | Percent(18, 0)   | discount pill (computed if null) |
+| `rating__c`          | Text(100)        | star rating       |
+| `review_count__c`    | Number(18, 0)    | reviews           |
+| `rank__c`            | Number(18, 0)    | vendor rank       |
+| `product_url__c`     | URL(255)         | "View" link       |
 
-### 5.4 Product__c — Assumed Schema
-
-These are the fields the backend expects. **Confirm with the Salesforce admin before coding** — adjust this section and the SOSL/SOQL templates if anything is named differently.
-
-availability	availability__c	Text(100)		False	
-brand	brand__c	Text(100)		False	
-Created By	CreatedById	Lookup(User)		False	
-current_price	current_price__c	Number(16, 2)		False	
-discount	discount__c	Percent(18, 0)		False	
-image_url	image_url__c	URL(255)		False	
-Last Modified By	LastModifiedById	Lookup(User)		False	
-model	model__c	Text(100)		False	
-original_price	original_price__c	Number(16, 2)		False	
-Owner	OwnerId	Lookup(User,Group)		True	
-product_url	product_url__c	URL(255)		False	
-Products Name	Name	Auto Number		True	
-rank	rank__c	Number(18, 0)		False	
-rating	rating__c	Text(100)		False	
-review_count	review_count__c	Number(18, 0)		False	
-scraped_at	scraped_at__c	Text(100)		False	
-source	source__c	Text(100)		False	
-specifications	specifications__c	Text(100)		False	
-title	title__c	Text(255) (External ID)
+Other org fields (`brand__c`, `model__c`, `image_url__c`, `availability__c`, `specifications__c`, `scraped_at__c`) exist but are **not** consumed by the current UI.
 
 ### 5.5 Configuration
 
-All config via environment variables, documented in .env.example:
+All config via env vars. Documented in `.env.example`:
+
+```
+# Salesforce (OAuth 2.0 Client Credentials Flow)
+SF_TOKEN_URL=https://login.salesforce.com/services/oauth2/token   # or My Domain
+SF_CLIENT_ID=                       # Connected App consumer key
+SF_CLIENT_SECRET=                   # Connected App consumer secret — keep secret
+SF_API_ENDPOINT=https://<your-domain>.my.salesforce.com/services/data/v60.0/sobjects/Product__c/
+SF_API_VERSION=60.0
+SF_QUERY_LIMIT=200                  # SOQL cap
+SF_RESULTS_PER_SOURCE=3             # top N per source returned to FE
+
 # OpenRouter
 OPENROUTER_API_KEY=
 OPENROUTER_MODEL=openai/gpt-oss-120b
 
-# Salesforce (OAuth 2.0 Client Credentials Flow)
-SF_LOGIN_URL=https://login.salesforce.com    # or https://<your-domain>.my.salesforce.com
-SF_CLIENT_ID=                  # Connected App consumer key
-SF_CLIENT_SECRET=              # Connected App consumer secret — keep secret
-SF_API_VERSION=60.0
-SF_QUERY_LIMIT=200             # SOQL cap
-SF_RESULTS_PER_SOURCE=3        # Top N per source returned to FE
-
 # App
 CORS_ALLOW_ORIGINS=http://localhost:5173
 LOG_LEVEL=INFO
+```
 
-Never hard-code secrets. Never log access tokens, the client secret, or the full Authorization header. Redact tokens in error messages.
+`SF_API_ENDPOINT` is documentation-only (the code derives the actual API URL from `SF_TOKEN_URL` → `instance_url` returned by auth). Never hard-code secrets. Never log the access token, client secret, or full Authorization header.
 
-### 5.6 Schemas (Pydantic / TypeScript)
-python
+### 5.6 Schemas (`app/models/schemas.py`)
+
+```python
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str
 
 class ProductQuery(BaseModel):
-    query: str                         # raw search string, e.g. "iPhone 15 Pro 256GB"
-    category: str | None = None        # "mobile", "laptop", etc.
+    query: str = Field(..., min_length=1)
+    category: str | None = None
     min_price: float | None = None
     max_price: float | None = None
     brand: str | None = None
-    sources: list[str] | None = None   # restrict to ["Amazon", "Flipkart"] etc.
+    sources: list[str] | None = None
 
+class ProductListing(BaseModel):
+    id: str
+    title: str
+    source: str
+    current_price: float | None = None
+    original_price: float | None = None
+    discount: int | None = None
+    rating: str | None = None
+    review_count: int | None = None
+    rank: int | None = None
+    product_url: str | None = None
+
+class ChatRequest(BaseModel):
+    messages: list[ChatMessage] = Field(..., min_length=1)
+
+class ChatResponse(BaseModel):
+    reply: str
+    product_query: ProductQuery | None = None
+
+class ProductSearchResponse(BaseModel):
+    results: list[ProductListing]
+```
 
 ---
 
-## 6. Testing Requirements
+## 6. Testing
 
-**Non-negotiable: every module ships with tests, and the full test suite must pass before the app is declared ready.**
+### 6.1 Backend (`pytest`)
 
-### 6.1 Backend tests (pytest)
+Current state: **54 tests pass, 89% coverage** on `app/`.
 
-**Unit tests** for every service function:
-  - openrouter.py: mock the HTTP layer, assert request shape, assert tool-call parsing, assert error handling for 4xx/5xx/timeouts.
-  - salesforce.py:
-    - Token request sends grant_type=client_credentials with the configured client id/secret in the form body.
-    - Successful auth caches access_token and instance_url; subsequent calls reuse the cache.
-    - Token refresh is triggered when the cached token nears expiry.
-    - SOQL LIKE escaping covers \, ', %, _ and is order-correct (parameterized test).
-    - Empty or whitespace-only input is rejected before the SF call.
-    - 401 from Salesforce triggers a single token refresh + retry, then surfaces.
-    - 5xx and network errors retry once, then surface a clean error.
-    - Client secret never appears in logs or exception messages (assert via captured logs).
-  - product_search.py:
-    - Groups results by Source__c correctly.
-    - Returns at most 3 per source.
-    - Ranking score: full-query substring match outranks token matches; ties broken by rating desc, then review count desc.
-    - Computes discount_percent when Original_Price__c is present and Discount__c is null.
-    - Handles missing optional fields without crashing.
-    - When a source has fewer than 3 matches, returns what's available (no padding).
-**Schema tests:** every Pydantic model has a roundtrip test and at least one validation-failure test.
-**Router tests** (using FastAPI TestClient): /api/chat and /api/products/search for success, validation errors, and upstream failures.
-**Integration test:** end-to-end with both LLM and Salesforce mocked, asserting that a user message like "find me a OnePlus 12" produces a normalized ProductListing[] with at most 3 entries per source.
-**Fixtures:** at least 3 sample Salesforce responses (happy path, partial fields, empty result) live under tests/fixtures/salesforce/.
-Coverage target: **≥ 85%** on app/services and app/routers.
+- **`test_salesforce.py`** — `escape_soql` parametrized escape order; token request body shape; token cache reuse; expiry-triggered refresh; 401 retry-once; second-401 surfaces; 5xx surfaces; empty query rejected before SF call; client secret never appears in captured logs.
+- **`test_product_search.py`** — full-query substring outscores token matches; tiebreak by rating then review count; `_normalize` computes discount when null, keeps explicit discount, omits when prices equal; missing optional fields don't crash; title-fallback to `Name`; per-source cap respected; under-cap groups returned at actual size.
+- **`test_openrouter.py`** — system prompt + tool schema present in payload; full conversation history forwarded; tool call parses to `ProductQuery`; plain text reply yields `None` query; 4xx/5xx/timeout all surface.
+- **`test_routers.py`** — `/api/chat` and `/api/products/search` happy paths, validation errors, 502 on upstream failure, end-to-end integration with both services mocked.
+- **Fixtures**: `tests/fixtures/salesforce/{happy_path,partial_fields,empty_result}.json`.
 
-### 6.2 Frontend tests (Vitest + React Testing Library)
+`tests/conftest.py` autouses an `override_settings` fixture so no real credentials are needed.
 
-Component tests for ChatWindow, MessageBubble, ChatInput, ComparisonTable, SourceBadge, and the loading/empty/error states of each.
-Hook tests for useChat and useProductSearch (mock fetch).
-Visual contract tests for source theming: every supported source resolves to its expected accent color and chip label.
-Snapshot tests are allowed but must not be the only assertion.
+### 6.2 Frontend (`vitest`)
 
-### 6.3 End-to-end tests (Playwright)
+Current state: **44 tests pass** across 6 files.
 
-At minimum:
-1. User types a product query → assistant replies → table renders with mocked data, grouped by source, max 3 rows per source.
-2. Each source's rows show its accent color and chip.
-3. Backend error → user sees a friendly error in chat, no broken UI.
-4. Empty results → "No products found" state renders correctly.
-5. Sorting and viewing a product link in the results table.
+- `ChatInput.test.tsx` — render, disabled state, onChange, Enter submits, Shift+Enter doesn't, empty value rejected.
+- `MessageBubble.test.tsx` — user vs assistant rendering, ARIA labels, typing indicator dots.
+- `ComparisonTable.test.tsx` — empty/loading/error states; product rendering; group headers; "Top match" only on first row of each group; discount pill; strikethrough MRP; View link target; multi-source grouping.
+- `RatingStars.test.tsx` — null → dash; numeric value rendered; 5 stars; non-numeric falls back to text; ARIA label.
+- `SourceBadge.test.tsx` + source-theme contract — every supported source resolves to expected accent + label; unknown source gets gray accent + own name.
+- `useProductSearch.test.ts` — initial state, loading transition, success, error.
 
-### 6.4 Definition of "ready"
+### 6.3 E2E (Playwright, `frontend/tests/e2e/`)
 
-The app is considered ready only when:
-pytest passes with coverage ≥ 85% on the targeted modules.
-vitest run passes with no failing tests.
-playwright test passes all E2E specs against a locally running stack (Salesforce mocked).
-ruff, black --check, eslint, and tsc --noEmit all pass with zero errors.
-Manual smoke test against a real Salesforce sandbox: chat works, query returns a grouped table, errors are handled gracefully, the access token refreshes correctly when it expires.
+`comparison.spec.ts` — empty state visible, chat input accepts text, example prompt click, app title, comparison panel header on desktop, single-column on mobile. Requires both servers running (`pnpm dev` + `uvicorn`).
+
+### 6.4 Quality gate
+
+App is "ready" when:
+- `pytest` passes (target ≥ 85% coverage on services/routers — currently 89%).
+- `vitest run` passes.
+- `pnpm typecheck` (tsc --noEmit) passes.
+- `ruff check .` clean.
+- E2E specs pass against locally running stack.
+- Manual smoke on a real Salesforce sandbox: chat works, table renders grouped, error states behave, token refresh works after expiry.
 
 ---
 
 ## 7. Coding Standards
 
-**Type everything.** No any in TypeScript, no untyped function signatures in Python.
-Prefer pure functions and small modules; keep components under ~150 lines.
-Error handling is explicit — never swallow exceptions silently; log with context.
-All user-facing strings live in one place per app (frontend/src/lib/strings.ts) so they can be edited without hunting through components.
-Per-source visuals live in frontend/src/lib/source-theme.ts so adding a new source is a one-file change.
-Accessibility: semantic HTML, keyboard navigation in the chat and tables, ARIA labels on icon-only buttons, sufficient color contrast (verify each source accent color meets AA against the chip's white text).
+- Type everything. No `any` in TS, no untyped function signatures in Python.
+- Small modules, pure functions where reasonable; components < ~150 lines.
+- Explicit error handling — never silently swallow; log with context (but never log secrets — `_RedactingFilter` is a defense-in-depth, not a license to log them).
+- All user-facing strings live in `frontend/src/lib/strings.ts`.
+- Per-source visuals live in `frontend/src/lib/source-theme.ts` — adding a new source is a one-file change.
+- Accessibility: semantic HTML, keyboard-navigable chat + table, ARIA labels on icon-only buttons, color contrast verified for source chips against white text.
 
 ---
 
-## 8. Build Order (recommended)
+## 8. Local development
 
-1. Scaffold both apps; confirm pnpm dev and uvicorn app.main:app --reload run side-by-side.
-2. Define schemas (§5.6) in both languages; generate or hand-write TS types from Pydantic.
-3. Build services/salesforce.py (Client Credentials auth + token cache + SOQL helpers) against mocked HTTP + tests.
-4. Build services/product_search.py (ranking, grouping, top-3-per-source) + tests.
-5. Build services/openrouter.py with tool calling + tests.
-6. Wire up /api/chat and /api/products/search + router tests.
-7. Build the chat UI shell with mocked responses.
-8. Build the source theme + ComparisonTable with grouped rows and accent borders.
-9. Connect frontend to backend; verify the full loop with mocks.
-10. Swap mocks for the real OpenRouter and a Salesforce sandbox; tune the system prompt and SOQL query.
-11. Write E2E tests; run the full quality gate from §6.4.
-12. Polish: empty/error/loading states, animations, accessibility pass.
+```bash
+# Backend
+cd backend
+python -m venv .venv && .venv\Scripts\activate    # or source .venv/bin/activate
+pip install -e ".[dev]"
+uvicorn app.main:app --reload                     # http://127.0.0.1:8000
+
+# Frontend (separate shell)
+cd frontend
+pnpm install
+pnpm dev                                          # http://localhost:5173
+```
+
+Vite dev server proxies `/api/*` → `http://localhost:8000`, so the frontend code calls relative URLs (`/api/chat`, `/api/products/search`).
 
 ---
+
+## 9. Build order (historical, for reference)
+
+1. Schemas in both languages.
+2. `services/salesforce.py` — Client Credentials auth + token cache + SOQL helpers, fully mocked tests.
+3. `services/product_search.py` — ranking, grouping, top-N-per-source.
+4. `services/openrouter.py` — tool calling.
+5. Routers `/api/chat`, `/api/products/search`.
+6. Chat UI shell with mocked responses.
+7. Source theme + `ComparisonTable`.
+8. Connect FE to BE; verify the loop end-to-end.
+9. Swap mocks for real OpenRouter + Salesforce sandbox; tune system prompt + SOQL.
+10. E2E tests + full quality gate.

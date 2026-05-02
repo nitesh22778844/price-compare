@@ -85,8 +85,6 @@ QUERY_RESPONSE = {
             "Review_Count__c": 1000,
             "Rank__c": 1,
             "Product_URL__c": None,
-            "Image_URL__c": None,
-            "Availability__c": "In Stock",
         }
     ],
 }

@@ -15,8 +15,6 @@ function makeListing(overrides: Partial<ProductListing> = {}): ProductListing {
     review_count: 5000,
     rank: 1,
     product_url: "https://amazon.in/dp/x",
-    image_url: null,
-    availability: "In Stock",
     ...overrides,
   };
 }

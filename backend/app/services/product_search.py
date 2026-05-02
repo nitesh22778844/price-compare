@@ -68,8 +68,6 @@ def _normalize(record: dict) -> ProductListing:
         review_count=_safe_int(_ci_get(record, "Review_Count__c")),
         rank=_safe_int(_ci_get(record, "Rank__c")),
         product_url=_ci_get(record, "Product_URL__c"),
-        image_url=_ci_get(record, "Image_URL__c"),
-        availability=_ci_get(record, "Availability__c"),
     )
 
 

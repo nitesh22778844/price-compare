@@ -152,7 +152,7 @@ function SourceGroup({ source, items }: SourceGroupProps) {
         </td>
       </tr>
       {items.map((item, idx) => (
-        <ProductRow key={item.id} item={item} isTopMatch={idx === 0} source={source} accent={theme.accent} />
+        <ProductRow key={item.id} item={item} isTopMatch={idx === 0} accent={theme.accent} />
       ))}
     </>
   );
@@ -161,7 +161,6 @@ function SourceGroup({ source, items }: SourceGroupProps) {
 interface ProductRowProps {
   item: ProductListing;
   isTopMatch: boolean;
-  source: string;
   accent: string;
 }
 

@@ -14,7 +14,7 @@ describe("SourceBadge", () => {
     expect(screen.getByText("Flipkart")).toBeInTheDocument();
   });
 
-  it("renders Reliance Digital with RD monogram", () => {
+  it("renders Reliance Digital with RD label", () => {
     render(<SourceBadge source="Reliance Digital" />);
     expect(screen.getByText("RD")).toBeInTheDocument();
   });
@@ -52,9 +52,5 @@ describe("source-theme contract", () => {
 
   it("unknown source gets gray accent", () => {
     expect(getSourceTheme("SomeNewStore").accent).toBe("#6B7280");
-  });
-
-  it("unknown source gets first letter as monogram", () => {
-    expect(getSourceTheme("ZStore").monogram).toBe("Z");
   });
 });

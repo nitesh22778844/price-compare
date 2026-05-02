@@ -105,11 +105,10 @@ class SalesforceClient:
         resp.raise_for_status()
         return resp.json()
 
-    def _build_soql(self, where_clause: str, limit: int, api_version: str) -> str:
+    def _build_soql(self, where_clause: str, limit: int) -> str:
         return (
             "SELECT Id, Name, title__c, source__c, current_price__c, original_price__c, "
-            "discount__c, rating__c, review_count__c, rank__c, product_url__c, "
-            "image_url__c, availability__c "
+            "discount__c, rating__c, review_count__c, rank__c, product_url__c "
             "FROM Product__c "
             f"WHERE {where_clause} AND source__c != null AND source__c != '' "
             "ORDER BY source__c ASC, rating__c DESC NULLS LAST, "
@@ -138,7 +137,7 @@ class SalesforceClient:
         instance_url = self._instance_url or s.sf_instance_url
         url = f"{instance_url}/services/data/v{s.sf_api_version}/query"
 
-        soql = self._build_soql(and_clauses, limit, s.sf_api_version)
+        soql = self._build_soql(and_clauses, limit)
         logger.debug("SOQL query (AND): %s", soql)
         data = await self._request("GET", url, params={"q": soql})
         records = data.get("records", [])
@@ -148,7 +147,7 @@ class SalesforceClient:
         # surfaces results (Python ranking will prioritise full-query matches).
         if not records and len(escaped) > 1:
             or_clauses = " OR ".join(f"title__c LIKE '%{t}%'" for t in escaped)
-            soql = self._build_soql(f"({or_clauses})", limit, s.sf_api_version)
+            soql = self._build_soql(f"({or_clauses})", limit)
             logger.debug("SOQL query (OR fallback): %s", soql)
             data = await self._request("GET", url, params={"q": soql})
             records = data.get("records", [])
