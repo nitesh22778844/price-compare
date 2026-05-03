@@ -28,6 +28,7 @@ class ProductListing(BaseModel):
     review_count: int | None = None
     rank: int | None = None
     product_url: str | None = None
+    image_url: str | None = None
 
 
 class ChatRequest(BaseModel):

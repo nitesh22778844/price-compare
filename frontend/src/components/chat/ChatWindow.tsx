@@ -42,15 +42,17 @@ export function ChatWindow({
   const showEmpty = messages.length === 0 && !isLoading;
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-200 bg-white flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+      <div className="px-5 py-4 border-b border-white/10 glass flex items-center gap-3 flex-shrink-0">
+        <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
           <Sparkles size={16} className="text-white" aria-hidden="true" />
         </div>
         <div>
-          <p className="font-semibold text-gray-900 text-sm">{STRINGS.assistantName}</p>
-          <p className="text-xs text-gray-400">{STRINGS.appSubtitle}</p>
+          <p className="font-semibold text-white text-[14px] tracking-tight leading-none">
+            {STRINGS.assistantName}
+          </p>
+          <p className="text-[11px] text-white/45 mt-1.5 leading-none">{STRINGS.appSubtitle}</p>
         </div>
       </div>
 
@@ -89,17 +91,17 @@ export function ChatWindow({
 function EmptyState({ onExampleClick }: { onExampleClick: (p: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center py-12">
-      <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
-        <Sparkles size={28} className="text-indigo-500" />
+      <div className="w-14 h-14 rounded-2xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/10">
+        <Sparkles size={28} className="text-indigo-400" />
       </div>
-      <h2 className="font-semibold text-gray-800 mb-1">{STRINGS.chatEmptyHeading}</h2>
-      <p className="text-sm text-gray-400 mb-6">{STRINGS.chatEmptySubtext}</p>
+      <h2 className="font-semibold text-white mb-1">{STRINGS.chatEmptyHeading}</h2>
+      <p className="text-sm text-white/40 mb-6">{STRINGS.chatEmptySubtext}</p>
       <div className="flex flex-col gap-2 w-full max-w-xs">
         {STRINGS.chatExamplePrompts.map((prompt) => (
           <button
             key={prompt}
             onClick={() => onExampleClick(prompt)}
-            className="text-sm text-left px-4 py-2.5 rounded-xl border border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-gray-700 hover:text-indigo-700"
+            className="text-sm text-left px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:border-indigo-500/40 hover:bg-indigo-500/10 transition-all duration-150 text-white/70 hover:text-white"
           >
             {prompt}
           </button>

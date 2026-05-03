@@ -108,7 +108,7 @@ class SalesforceClient:
     def _build_soql(self, where_clause: str, limit: int) -> str:
         return (
             "SELECT Id, Name, title__c, source__c, current_price__c, original_price__c, "
-            "discount__c, rating__c, review_count__c, rank__c, product_url__c "
+            "discount__c, rating__c, review_count__c, rank__c, product_url__c, image_url__c "
             "FROM Product__c "
             f"WHERE {where_clause} AND source__c != null AND source__c != '' "
             "ORDER BY source__c ASC, rating__c DESC NULLS LAST, "

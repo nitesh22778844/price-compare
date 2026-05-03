@@ -15,6 +15,7 @@ function makeListing(overrides: Partial<ProductListing> = {}): ProductListing {
     review_count: 5000,
     rank: 1,
     product_url: "https://amazon.in/dp/x",
+    image_url: null,
     ...overrides,
   };
 }
@@ -42,7 +43,9 @@ describe("ComparisonTable", () => {
 
   it("renders source group header", () => {
     render(<ComparisonTable results={[makeListing()]} loading={false} error={null} />);
-    expect(screen.getByText(/Amazon — 1 result/)).toBeInTheDocument();
+    // Source name and result count are in separate spans for distinct styling
+    expect(screen.getAllByText(/Amazon/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/— 1 result/)).toBeInTheDocument();
   });
 
   it("renders 'Top match' badge on first row of each group", () => {

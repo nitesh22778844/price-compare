@@ -25,6 +25,7 @@ export interface ProductListing {
   review_count: number | null;
   rank: number | null;
   product_url: string | null;
+  image_url: string | null;
 }
 
 export interface ChatRequest {

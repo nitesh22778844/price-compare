@@ -6,25 +6,85 @@
   * {
     box-sizing: border-box;
   }
+  html, body {
+    background-color: #000;
+  }
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply text-white font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.011em;
+    position: relative;
+  }
+
+  /* Apple-style fine-grain noise overlay — sits above content with pointer-events: none */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 }
 
 @layer utilities {
+  /* Refined dark scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: theme('colors.gray.300') transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: theme('colors.gray.300');
+    background-color: rgba(255, 255, 255, 0.12);
     border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Apple-style aurora background — pure black + vivid color glows in corners */
+  .app-bg {
+    background-color: #000000;
+    background-image:
+      radial-gradient(ellipse 55% 45% at 18% 0%, rgba(99, 102, 241, 0.28) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 85% 8%, rgba(56, 189, 248, 0.20) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 50% at 0% 70%, rgba(217, 70, 239, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 45% at 100% 100%, rgba(168, 85, 247, 0.20) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 35% at 50% 100%, rgba(14, 165, 233, 0.08) 0%, transparent 55%);
+  }
+
+  /* Frosted glass — Apple's signature with saturation boost */
+  .glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  .glass-strong {
+    background: rgba(10, 10, 18, 0.65);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+
+  /* Subtle inner gradient highlight on glass panels */
+  .glass-panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* Glowing accent for important interactive elements */
+  .glow-indigo {
+    box-shadow: 0 0 24px -4px rgba(99, 102, 241, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.2);
   }
 }
 
@@ -45,7 +105,16 @@
 }
 
 .shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* Fade-in animation for dynamic content */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fade-up 0.4s ease-out forwards;
 }

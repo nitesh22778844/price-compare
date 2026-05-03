@@ -1,8 +1,27 @@
 # Price Compare
 
-AI-powered shopping assistant that compares product prices across Indian e-commerce stores (Amazon, Flipkart, Croma, Reliance Digital). Users describe what they're looking for in chat — the assistant calls a tool, queries Salesforce, and renders the top 3 matches per store as a side-by-side comparison table.
+AI-powered shopping assistant that compares product prices across Indian e-commerce stores (Amazon, Flipkart, Croma, Reliance Digital). Users describe what they're looking for in chat — the assistant calls a tool, queries Salesforce, and renders the top 3 matches per store as a side-by-side comparison table with product thumbnails and a polished Apple-style dark UI.
 
 > **Repo:** https://github.com/nitesh22778844/price-compare
+
+---
+
+## Table of contents
+
+- [Architecture](#architecture)
+- [Repository layout](#repository-layout)
+- [Prerequisites](#prerequisites)
+- [Salesforce `Product__c` schema](#salesforce-product__c-schema)
+- [Setup](#setup)
+- [Starting & stopping the app](#starting--stopping-the-app)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [UI / design](#ui--design)
+- [API reference](#api-reference)
+- [Testing](#testing)
+- [Configuration reference](#configuration-reference)
+- [Security notes](#security-notes)
+- [Further reading](#further-reading)
 
 ---
 
@@ -45,7 +64,7 @@ price-compare/
 │   │   ├── hooks/                # useChat, useProductSearch
 │   │   ├── lib/                  # api, types, source-theme, strings
 │   │   ├── pages/App.tsx
-│   │   └── styles/index.css
+│   │   └── styles/index.css      # dark aurora background, glass utilities
 │   └── tests/                    # Vitest unit + Playwright e2e
 └── backend/              # FastAPI app
     ├── app/
@@ -68,23 +87,28 @@ price-compare/
   - A **Connected App** with **"Enable Client Credentials Flow"** turned on, and a "Run As" user assigned. Capture the consumer key + secret.
 - An **OpenRouter API key** (https://openrouter.ai).
 
-### Salesforce `Product__c` schema
+---
+
+## Salesforce `Product__c` schema
 
 Fields the backend reads:
 
-| API name             | Type             |
-| -------------------- | ---------------- |
-| `title__c`           | Text(255), External ID |
-| `source__c`          | Text(100) — e.g. `Amazon`, `Flipkart` |
-| `current_price__c`   | Number(16, 2)    |
-| `original_price__c`  | Number(16, 2)    |
-| `discount__c`        | Percent(18, 0)   |
-| `rating__c`          | Text(100)        |
-| `review_count__c`    | Number(18, 0)    |
-| `rank__c`            | Number(18, 0)    |
-| `product_url__c`     | URL(255)         |
+| API name             | Type             | Used as                                  |
+| -------------------- | ---------------- | ---------------------------------------- |
+| `Id`                 | (system)         | listing id                               |
+| `Name`               | Auto Number      | title fallback                           |
+| `title__c`           | Text(255), External ID | display title + match target       |
+| `source__c`          | Text(100)        | grouping key — e.g. `Amazon`, `Flipkart` |
+| `current_price__c`   | Number(16, 2)    | price                                    |
+| `original_price__c`  | Number(16, 2)    | MRP / strike-through                     |
+| `discount__c`        | Percent(18, 0)   | discount pill (computed if null)         |
+| `rating__c`          | Text(100)        | star rating                              |
+| `review_count__c`    | Number(18, 0)    | reviews                                  |
+| `rank__c`            | Number(18, 0)    | vendor rank                              |
+| `product_url__c`     | URL(255)         | "View" link                              |
+| `image_url__c`       | URL(255)         | product thumbnail in the comparison table |
 
-`Id` and `Name` are system fields. Other fields on the org (`brand__c`, `image_url__c`, `availability__c`, etc.) exist but are not consumed by the current UI.
+Other org fields (`brand__c`, `model__c`, `availability__c`, `specifications__c`, `scraped_at__c`) exist but are not consumed by the current UI.
 
 ---
 
@@ -110,7 +134,7 @@ cp .env.example .env
 
 `.env` is gitignored — never commit secrets.
 
-### 3. Backend
+### 3. Install backend
 
 ```bash
 cd backend
@@ -121,20 +145,75 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -e ".[dev]"
-uvicorn app.main:app --reload
-# → http://127.0.0.1:8000  (OpenAPI docs at /docs)
 ```
 
-### 4. Frontend (separate shell)
+### 4. Install frontend
 
 ```bash
 cd frontend
 pnpm install
-pnpm dev
-# → http://localhost:5173
 ```
 
 The Vite dev server proxies `/api/*` to the FastAPI server, so frontend code uses relative URLs.
+
+---
+
+## Starting & stopping the app
+
+The app needs **two processes running side-by-side**: FastAPI (port 8000) and Vite (port 5173). Pick whichever flow fits your shell.
+
+### Option A — two foreground shells (simplest, recommended for dev)
+
+**Shell 1 — backend:**
+```bash
+cd backend
+.venv\Scripts\activate          # Windows  (or: source .venv/bin/activate)
+uvicorn app.main:app --reload   # → http://127.0.0.1:8000  (OpenAPI at /docs)
+```
+
+**Shell 2 — frontend:**
+```bash
+cd frontend
+pnpm dev                        # → http://localhost:5173
+```
+
+Stop either with **Ctrl+C** in its shell.
+
+### Option B — Windows PowerShell, both in background windows
+
+Launch both servers in their own terminal windows with one command:
+
+```powershell
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'D:\ClaudeWork\price-compare\backend'; python -m uvicorn app.main:app --reload"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd 'D:\ClaudeWork\price-compare\frontend'; pnpm dev"
+```
+
+**Stop both** by killing whatever is bound to ports 8000 and 5173:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000,5173 -ErrorAction SilentlyContinue |
+  ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+```
+
+**Restart** = stop (above) + start (above), in that order.
+
+### Option C — macOS / Linux, both in background
+
+```bash
+(cd backend && source .venv/bin/activate && uvicorn app.main:app --reload) &
+(cd frontend && pnpm dev) &
+```
+
+**Stop both:**
+```bash
+lsof -ti:8000,5173 | xargs kill -9 2>/dev/null
+```
+
+### Verify it's running
+
+- Backend health: open http://127.0.0.1:8000/docs (Swagger UI).
+- Frontend: open http://localhost:5173.
+- If the chat sends but the table never updates, check the backend shell — token/auth errors and Salesforce 4xx/5xx surface there.
 
 ---
 
@@ -142,7 +221,7 @@ The Vite dev server proxies `/api/*` to the FastAPI server, so frontend code use
 
 1. Open http://localhost:5173.
 2. Type something like *"Find me a OnePlus 12"*, *"any pen drive"*, or *"gaming laptop under 80000"* — or click an example prompt.
-3. The assistant interprets the request, queries Salesforce, and the right-hand pane renders results grouped by store with the top 3 per source.
+3. The assistant interprets the request, queries Salesforce, and the right-hand pane renders results grouped by store with the top 3 per source — including product thumbnails, prices, ratings, and a "View" link out to the listing.
 
 ---
 
@@ -172,11 +251,18 @@ Salesforce can't do per-group `LIMIT`, so:
 3. Keep top 3 per source. Don't pad — fewer matches → return what's available.
 4. Compute `discount__c` from current/original price if it's null.
 
-### Frontend rendering
+---
 
-Each store has a designated accent color (`Amazon` → orange, `Flipkart` → blue, `Croma` → green, `Reliance Digital` → red). Rows are grouped by store with a section header, the top row of each group gets a *"Top match"* badge, and each row carries a 4px left border in the store's accent color.
+## UI / design
 
-Adding a new store = one entry in `frontend/src/lib/source-theme.ts`.
+The frontend ships with a polished **dark, Apple-style aesthetic**:
+
+- **Aurora background** — pure black canvas with five overlapping radial gradients in indigo, cyan, magenta, purple, and sky-blue placed at the corners. An SVG fine-grain noise overlay (`mix-blend-mode: overlay`, 5% opacity) adds the film-grain texture you see on Apple's product pages.
+- **Frosted glass panels** — header, comparison-pane header, and chat header use `backdrop-filter: blur(20px) saturate(180%)` for the unmistakable Apple navigation feel.
+- **Per-source accent colors** — Amazon → orange, Flipkart → blue, Croma → green, Reliance Digital → red. Each row carries a 3px left border in its accent; group headers get a tinted band; the first row of each group gets a *"Top match"* badge. Adding a new store = one entry in `frontend/src/lib/source-theme.ts`.
+- **Product thumbnails** — every row shows a 40×40 thumbnail sourced from `image_url__c`. If the URL fails to load (or is null), the row falls back to a tinted placeholder using the store's accent.
+- **Refined typography** — Inter with tight letter-spacing (`-0.011em`) and SF Pro-style stylistic alternates (`cv02 cv03 cv04 cv11`).
+- **Tactile interactions** — gradient send button with hover-glow + `active:scale-95`, animated typing dots, glow-shadow on the indigo logo, subtle shimmer on table loading skeletons.
 
 ---
 
@@ -225,7 +311,8 @@ Response:
       "rating": "4.5",
       "review_count": 12400,
       "rank": 3,
-      "product_url": "https://amazon.in/dp/B0ABCDE"
+      "product_url": "https://amazon.in/dp/B0ABCDE",
+      "image_url": "https://m.media-amazon.com/images/I/abc.jpg"
     }
   ]
 }
@@ -274,6 +361,7 @@ All config via environment variables. See `.env.example` for the canonical list.
 - A `_RedactingFilter` in `backend/app/core/logging.py` scrubs `SF_CLIENT_SECRET` and `OPENROUTER_API_KEY` from any log line that contains them — defense-in-depth on top of "don't log secrets in the first place."
 - Authorization headers and access tokens are never logged.
 - All SOQL is built with proper escaping (`\`, `'`, `%`, `_`) to prevent SOQL injection.
+- Product images load from `image_url__c` URLs returned by Salesforce — point this field at trusted CDNs only, since the URLs render as `<img src>` in the user's browser.
 - In production, prefer a My Domain URL (`https://<your-domain>.my.salesforce.com/...`) over `login.salesforce.com`.
 
 ---
@@ -284,3 +372,4 @@ All config via environment variables. See `.env.example` for the canonical list.
 - `backend/app/services/salesforce.py` — auth flow, escaping, AND→OR fallback.
 - `backend/app/services/product_search.py` — ranking + grouping logic.
 - `frontend/src/lib/source-theme.ts` — per-source visual identity.
+- `frontend/src/styles/index.css` — aurora background, noise overlay, glass utilities.
