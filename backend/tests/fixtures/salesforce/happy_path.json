@@ -3,7 +3,7 @@
   "done": true,
   "records": [
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000AbCdEQAV",
       "Name": "P-001",
       "Title__c": "OnePlus 12 5G 256GB Black",
@@ -16,10 +16,12 @@
       "Rank__c": 3,
       "Product_URL__c": "https://amazon.in/dp/B0ABCDE",
       "Image_URL__c": "https://m.media-amazon.com/images/I/sample.jpg",
-      "Availability__c": "In Stock"
+      "Availability__c": "In Stock",
+      "Last_Ordered_Date__c": "2026-04-01",
+      "Number_Of_Times_Purchased__c": 4
     },
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000AbCdFQAV",
       "Name": "P-002",
       "Title__c": "OnePlus 12 5G 512GB Green",
@@ -32,10 +34,12 @@
       "Rank__c": 5,
       "Product_URL__c": "https://amazon.in/dp/B0ABCDF",
       "Image_URL__c": null,
-      "Availability__c": "In Stock"
+      "Availability__c": "In Stock",
+      "Last_Ordered_Date__c": "2026-05-19",
+      "Number_Of_Times_Purchased__c": 1
     },
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000AbCdGQAV",
       "Name": "P-003",
       "Title__c": "OnePlus 12 5G 256GB Silky Black",
@@ -48,10 +52,12 @@
       "Rank__c": 7,
       "Product_URL__c": "https://amazon.in/dp/B0ABCDG",
       "Image_URL__c": null,
-      "Availability__c": "In Stock"
+      "Availability__c": "In Stock",
+      "Last_Ordered_Date__c": null,
+      "Number_Of_Times_Purchased__c": 0
     },
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000AbCdHQAV",
       "Name": "P-004",
       "Title__c": "OnePlus 12 5G 256GB Flowy Emerald",
@@ -64,10 +70,12 @@
       "Rank__c": 1,
       "Product_URL__c": "https://flipkart.com/p/one-plus-12",
       "Image_URL__c": "https://rukminim2.flixcart.com/sample.jpg",
-      "Availability__c": "In Stock"
+      "Availability__c": "In Stock",
+      "Last_Ordered_Date__c": "2026-03-10",
+      "Number_Of_Times_Purchased__c": 2
     },
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000AbCdIQAV",
       "Name": "P-005",
       "Title__c": "OnePlus 12 5G 512GB Flowy Emerald",
@@ -83,7 +91,7 @@
       "Availability__c": "In Stock"
     },
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000AbCdJQAV",
       "Name": "P-006",
       "Title__c": "OnePlus 12 5G 256GB",
@@ -100,3 +108,4 @@
     }
   ]
 }
+

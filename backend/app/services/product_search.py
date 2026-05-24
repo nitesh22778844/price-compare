@@ -1,6 +1,6 @@
-import re
+from datetime import date
 
-from app.models.schemas import ProductListing
+from app.models.schemas import BuySuggestion, ProductListing
 
 
 def _safe_float(value) -> float | None:
@@ -30,18 +30,60 @@ def _ci_get(record: dict, key: str):
     return None
 
 
-def _score(record: dict, query: str, tokens: list[str]) -> tuple[float, float, int]:
-    title = (_ci_get(record, "Title__c") or "").lower()
-    match_score = 10.0 if query.lower() in title else 0.0
-    for token in tokens:
-        if token and re.search(rf"\b{re.escape(token.lower())}\b", title):
-            match_score += 1.0
-    rating = _safe_float(_ci_get(record, "Rating__c")) or 0.0
-    review_count = _safe_int(_ci_get(record, "Review_Count__c")) or 0
-    return (match_score, rating, review_count)
+def _parse_sf_date(value) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    try:
+        return date.fromisoformat(str(value)[:10])
+    except (ValueError, TypeError):
+        return None
 
 
-def _normalize(record: dict) -> ProductListing:
+_RESTOCK_THRESHOLD_DAYS = 7
+_FREQUENT_THRESHOLD = 3
+_MISSING_RANK_SCORE = -(10**9)
+
+
+def _derive_suggestion(
+    times: int | None,
+    last_ordered: date | None,
+    today: date,
+) -> tuple[BuySuggestion | None, str | None]:
+    if times is None or times <= 0:
+        return "new", "Never ordered before"
+
+    if times >= _FREQUENT_THRESHOLD:
+        if last_ordered is not None:
+            days = (today - last_ordered).days
+            return "frequent", f"Bought {times}x, last {days} days ago"
+        return "frequent", f"Bought {times}x"
+
+    if last_ordered is None:
+        return "restock", f"Bought {times}x, last order date unknown"
+
+    days = (today - last_ordered).days
+    if days >= _RESTOCK_THRESHOLD_DAYS:
+        return "restock", f"Bought {times}x, last {days} days ago"
+    return "recent", f"Bought {times}x, last {days} days ago"
+
+
+def _score(record: dict) -> tuple[int, int]:
+    """Determines order within a source group. The first item per group is shown
+    as 'Top match' in the UI.
+
+    Primary: number of times the user has purchased this product (desc).
+    Tie-break: vendor rank__c (asc — #1 wins over #7). Records with no rank
+    sort last among ties; records with no purchase history all tie at 0.
+    """
+    times = _safe_int(_ci_get(record, "Number_Of_Times_Purchased__c")) or 0
+    rank_value = _safe_int(_ci_get(record, "Rank__c"))
+    rank_score = -rank_value if rank_value is not None else _MISSING_RANK_SCORE
+    return (times, rank_score)
+
+
+def _normalize(record: dict, today: date | None = None) -> ProductListing:
     current_price = _safe_float(_ci_get(record, "Current_Price__c"))
     original_price = _safe_float(_ci_get(record, "Original_Price__c"))
     discount = _safe_int(_ci_get(record, "Discount__c"))
@@ -57,6 +99,15 @@ def _normalize(record: dict) -> ProductListing:
 
     rating_value = _ci_get(record, "Rating__c")
 
+    times_purchased = _safe_int(_ci_get(record, "Number_Of_Times_Purchased__c"))
+    last_ordered_raw = _ci_get(record, "Last_Ordered_Date__c")
+    last_ordered_date = _parse_sf_date(last_ordered_raw)
+    buy_suggestion, suggestion_reason = _derive_suggestion(
+        times_purchased,
+        last_ordered_date,
+        today or date.today(),
+    )
+
     return ProductListing(
         id=_ci_get(record, "Id") or "",
         title=_ci_get(record, "Title__c") or _ci_get(record, "Name") or "",
@@ -69,20 +120,22 @@ def _normalize(record: dict) -> ProductListing:
         rank=_safe_int(_ci_get(record, "Rank__c")),
         product_url=_ci_get(record, "Product_URL__c"),
         image_url=_ci_get(record, "Image_URL__c"),
+        last_ordered_date=str(last_ordered_raw)[:10] if last_ordered_raw else None,
+        times_purchased=times_purchased,
+        buy_suggestion=buy_suggestion,
+        suggestion_reason=suggestion_reason,
     )
 
 
 def rank_and_group(
     records: list[dict],
-    query: str,
+    query: str,  # noqa: ARG001 — retained for API compatibility
     per_source: int = 3,
 ) -> list[ProductListing]:
-    tokens = [t for t in query.strip().split() if t]
     groups: dict[str, list[tuple]] = {}
     for record in records:
         source = _ci_get(record, "Source__c") or "Unknown"
-        score_tuple = _score(record, query, tokens)
-        groups.setdefault(source, []).append((score_tuple, record))
+        groups.setdefault(source, []).append((_score(record), record))
 
     result: list[ProductListing] = []
     for _source, items in groups.items():

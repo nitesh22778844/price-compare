@@ -79,6 +79,11 @@ def _make_listing(**kwargs) -> dict:
         review_count=5000,
         rank=1,
         product_url="https://amazon.in/dp/x",
+        image_url=None,
+        last_ordered_date=None,
+        times_purchased=None,
+        buy_suggestion=None,
+        suggestion_reason=None,
     )
     defaults.update(kwargs)
     return defaults

@@ -16,6 +16,10 @@ function makeListing(overrides: Partial<ProductListing> = {}): ProductListing {
     rank: 1,
     product_url: "https://amazon.in/dp/x",
     image_url: null,
+    last_ordered_date: null,
+    times_purchased: null,
+    buy_suggestion: null,
+    suggestion_reason: null,
     ...overrides,
   };
 }
@@ -86,5 +90,26 @@ describe("ComparisonTable", () => {
     render(<ComparisonTable results={results} loading={false} error={null} />);
     expect(screen.getAllByText(/Amazon/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Flipkart/).length).toBeGreaterThan(0);
+  });
+
+  it("renders the Buy? column header", () => {
+    render(<ComparisonTable results={[makeListing()]} loading={false} error={null} />);
+    expect(screen.getByText("Buy?")).toBeInTheDocument();
+  });
+
+  it("renders a SuggestionBadge when buy_suggestion is set", () => {
+    render(
+      <ComparisonTable
+        results={[
+          makeListing({
+            buy_suggestion: "frequent",
+            suggestion_reason: "Bought 4x, last 12 days ago",
+          }),
+        ]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByText(/frequent buy/i)).toBeInTheDocument();
   });
 });

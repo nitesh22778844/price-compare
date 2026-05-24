@@ -202,8 +202,9 @@ Backend flow:
 **SOQL template** (built by `_build_soql`):
 ```sql
 SELECT Id, Name, title__c, source__c, current_price__c, original_price__c,
-       discount__c, rating__c, review_count__c, rank__c, product_url__c
-FROM Product__c
+       discount__c, rating__c, review_count__c, rank__c, product_url__c,
+       image_url__c, last_ordered_date__c, number_of_times_purchased__c
+FROM Grocery_Product__c
 WHERE <where_clause> AND source__c != null AND source__c != ''
 ORDER BY source__c ASC, rating__c DESC NULLS LAST,
          review_count__c DESC NULLS LAST
@@ -212,20 +213,33 @@ LIMIT <SF_QUERY_LIMIT>
 
 **Two-stage matching strategy:**
 1. **AND-of-tokens** (primary): `title__c LIKE '%t1%' AND title__c LIKE '%t2%' AND ...` — each escaped token must appear.
-2. **OR-of-tokens** (fallback): triggered only when the AND query returns zero records *and* there are >1 tokens. Surfaces partial matches; Python ranking re-prioritizes full-query hits.
+2. **OR-of-tokens** (fallback): triggered only when the AND query returns zero records *and* there are >1 tokens. Surfaces partial matches.
 
 #### 5.3.3 Ranking + grouping (`app/services/product_search.py`)
 
-`rank_and_group(records, query, per_source=3)`:
+`rank_and_group(records, query, per_source=3)` (the `query` argument is retained for API symmetry but no longer affects ordering):
 
 1. Group raw records by `source__c`.
-2. Score each record (`_score`):
-   - **+10** if the full query is a case-insensitive substring of `title__c`.
-   - **+1** per token whole-word match.
-   - Tie-break: `rating__c` desc, then `review_count__c` desc.
-3. Within each source, sort by score desc and keep top `per_source`.
-4. Normalize each kept record (`_normalize`) into `ProductListing`. If `discount__c` is null but both prices are present and positive, compute it as `round((1 - current/original) * 100)`.
+2. Score each record (`_score`) by `(number_of_times_purchased__c desc, rank__c asc)`:
+   - **Primary:** times purchased — records you've bought most often win (null/0 all tie at 0).
+   - **Tie-break:** `rank__c` ascending — lower vendor rank (#1) beats higher (#7). Records with no `rank__c` sort last among ties.
+3. Within each source, sort by score desc and keep top `per_source`. The first item per source group is rendered as **"Top match"** in the UI.
+4. Normalize each kept record (`_normalize`) into `ProductListing`. If `discount__c` is null but both prices are present and positive, compute it as `round((1 - current/original) * 100)`. Compute `buy_suggestion` + `suggestion_reason` from `number_of_times_purchased__c` and `last_ordered_date__c` (see §5.3.4).
 5. **Don't pad** — if a source has fewer than `per_source` matches, return what's available.
+
+#### 5.3.4 Buy suggestion (`_derive_suggestion`)
+
+A tiered hint shown in the "Buy?" column. Pure function of `(times, last_ordered_date, today)` so it's trivially testable with a pinned `today`.
+
+| Condition                                                       | label        |
+| --------------------------------------------------------------- | ------------ |
+| `times` is null OR `times == 0`                                 | `"new"`      |
+| `times >= 3`                                                    | `"frequent"` |
+| `times >= 1` AND `last_ordered_date` known AND days ≥ 7         | `"restock"`  |
+| `times >= 1` AND `last_ordered_date` known AND days < 7         | `"recent"`   |
+| `times >= 1` AND `last_ordered_date` null                       | `"restock"`  |
+
+`suggestion_reason` is a human-readable tooltip (e.g. *"Bought 2x, last 12 days ago"*). The 7-day threshold and frequency cutoff live as `_RESTOCK_THRESHOLD_DAYS` / `_FREQUENT_THRESHOLD` constants in `product_search.py`.
 
 `_ci_get` does case-insensitive field lookup so we tolerate either `Title__c` or `title__c` casing from Salesforce.
 

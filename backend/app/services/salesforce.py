@@ -98,18 +98,18 @@ class SalesforceClient:
                 self._expires_at = 0.0
             return await self._request(method, url, _retry=False, **kwargs)
 
-        if resp.status_code >= 500:
-            logger.error("Salesforce server error: HTTP %s", resp.status_code)
+        if resp.status_code >= 400:
+            logger.error(f"Salesforce error: HTTP {resp.status_code} body={resp.text}")
             resp.raise_for_status()
 
-        resp.raise_for_status()
         return resp.json()
 
     def _build_soql(self, where_clause: str, limit: int) -> str:
         return (
             "SELECT Id, Name, title__c, source__c, current_price__c, original_price__c, "
-            "discount__c, rating__c, review_count__c, rank__c, product_url__c, image_url__c "
-            "FROM Product__c "
+            "discount__c, rating__c, review_count__c, rank__c, product_url__c, "
+            "image_url__c, last_ordered_date__c, number_of_times_purchased__c "
+            "FROM Grocery_Product__c "
             f"WHERE {where_clause} AND source__c != null AND source__c != '' "
             "ORDER BY source__c ASC, rating__c DESC NULLS LAST, "
             "review_count__c DESC NULLS LAST "

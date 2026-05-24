@@ -10,8 +10,14 @@ const THEMES: Record<string, SourceTheme> = {
   "Reliance Digital": { accent: "#C8102E", label: "RD" },
 };
 
+const LOOKUP: Record<string, string> = Object.fromEntries(
+  Object.keys(THEMES).map((k) => [k.toLowerCase(), k]),
+);
+
 export function getSourceTheme(source: string): SourceTheme {
-  return THEMES[source] ?? { accent: "#6B7280", label: source };
+  const matched = LOOKUP[source.toLowerCase().trim()];
+  if (matched) return THEMES[matched];
+  return { accent: "#6B7280", label: source };
 }
 
 export const SUPPORTED_SOURCES = Object.keys(THEMES);

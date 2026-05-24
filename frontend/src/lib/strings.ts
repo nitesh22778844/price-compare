@@ -28,10 +28,16 @@ export const STRINGS = {
   columnDiscount: "Discount",
   columnRating: "Rating",
   columnReviews: "Reviews",
+  columnSuggestion: "Buy?",
   columnRank: "Rank",
   columnLink: "",
 
   topMatchBadge: "Top match",
   viewButtonLabel: "View",
   noRankLabel: "—",
+
+  suggestionFrequent: "Frequent buy",
+  suggestionRestock: "Time to restock",
+  suggestionRecent: "Recently bought",
+  suggestionNew: "New to you",
 } as const;

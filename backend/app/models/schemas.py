@@ -17,6 +17,9 @@ class ProductQuery(BaseModel):
     sources: list[str] | None = None
 
 
+BuySuggestion = Literal["frequent", "restock", "recent", "new"]
+
+
 class ProductListing(BaseModel):
     id: str
     title: str
@@ -29,6 +32,10 @@ class ProductListing(BaseModel):
     rank: int | None = None
     product_url: str | None = None
     image_url: str | None = None
+    last_ordered_date: str | None = None
+    times_purchased: int | None = None
+    buy_suggestion: BuySuggestion | None = None
+    suggestion_reason: str | None = None
 
 
 class ChatRequest(BaseModel):

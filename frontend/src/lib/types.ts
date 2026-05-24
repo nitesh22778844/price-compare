@@ -14,6 +14,8 @@ export interface ProductQuery {
   sources?: string[] | null;
 }
 
+export type BuySuggestion = "frequent" | "restock" | "recent" | "new";
+
 export interface ProductListing {
   id: string;
   title: string;
@@ -26,6 +28,10 @@ export interface ProductListing {
   rank: number | null;
   product_url: string | null;
   image_url: string | null;
+  last_ordered_date: string | null;
+  times_purchased: number | null;
+  buy_suggestion: BuySuggestion | null;
+  suggestion_reason: string | null;
 }
 
 export interface ChatRequest {

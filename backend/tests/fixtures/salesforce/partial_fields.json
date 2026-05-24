@@ -3,7 +3,7 @@
   "done": true,
   "records": [
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000XxYyZQAV",
       "Name": "P-101",
       "Title__c": "OnePlus 12 5G",
@@ -19,7 +19,7 @@
       "Availability__c": null
     },
     {
-      "attributes": { "type": "Product__c" },
+      "attributes": { "type": "Grocery_Product__c" },
       "Id": "a001A00000XxYyAQAV",
       "Name": "P-102",
       "Title__c": "OnePlus 12",
@@ -32,7 +32,10 @@
       "Rank__c": null,
       "Product_URL__c": "https://reliancedigital.in/oneplus-12",
       "Image_URL__c": null,
-      "Availability__c": "In Stock"
+      "Availability__c": "In Stock",
+      "Last_Ordered_Date__c": "2026-05-10",
+      "Number_Of_Times_Purchased__c": 1
     }
   ]
 }
+

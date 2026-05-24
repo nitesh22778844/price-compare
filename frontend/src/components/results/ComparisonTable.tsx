@@ -4,12 +4,15 @@ import { getSourceTheme } from "../../lib/source-theme";
 import { STRINGS } from "../../lib/strings";
 import { SourceBadge } from "./SourceBadge";
 import { RatingStars } from "./RatingStars";
+import { SuggestionBadge } from "./SuggestionBadge";
 
 interface Props {
   results: ProductListing[];
   loading: boolean;
   error: string | null;
 }
+
+const COLUMN_COUNT = 10;
 
 function formatINR(amount: number | null): string {
   if (amount === null) return "—";
@@ -40,8 +43,8 @@ function groupBySource(listings: ProductListing[]): Map<string, ProductListing[]
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 9 }, (_, i) => (
-        <td key={i} className="px-4 py-3">
+      {Array.from({ length: COLUMN_COUNT }, (_, i) => (
+        <td key={i} className="px-4 py-2.5">
           <div className="shimmer h-4 rounded w-full" />
         </td>
       ))}
@@ -51,12 +54,12 @@ function SkeletonRow() {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-        <span className="text-3xl" role="img" aria-label="search">🔍</span>
+    <div className="flex flex-col items-center justify-center py-24 text-center fade-up">
+      <div className="w-20 h-20 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
+        <span className="text-4xl" role="img" aria-label="search">🔍</span>
       </div>
-      <p className="text-white/70 font-medium">{STRINGS.tableEmptyHeading}</p>
-      <p className="text-white/30 text-sm mt-1">{STRINGS.tableEmptySubtext}</p>
+      <p className="text-slate-800 font-medium text-base">{STRINGS.tableEmptyHeading}</p>
+      <p className="text-slate-500 text-sm mt-1.5">{STRINGS.tableEmptySubtext}</p>
     </div>
   );
 }
@@ -65,7 +68,7 @@ export function ComparisonTable({ results, loading, error }: Props) {
   const groups = groupBySource(results);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden bg-white">
       <div className="flex-1 overflow-auto scrollbar-thin">
         {loading ? (
           <table className="w-full border-collapse text-sm" aria-label="Loading product results">
@@ -75,12 +78,12 @@ export function ComparisonTable({ results, loading, error }: Props) {
             </tbody>
           </table>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-3">
-              <span className="text-2xl" role="img" aria-label="error">⚠️</span>
+          <div className="flex flex-col items-center justify-center py-24 text-center fade-up">
+            <div className="w-20 h-20 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-4 shadow-sm">
+              <span className="text-4xl" role="img" aria-label="error">⚠️</span>
             </div>
-            <p className="text-red-400 font-medium">{STRINGS.tableErrorHeading}</p>
-            <p className="text-white/30 text-sm mt-1">{error}</p>
+            <p className="text-red-700 font-medium text-base">{STRINGS.tableErrorHeading}</p>
+            <p className="text-slate-500 text-sm mt-1.5">{error}</p>
           </div>
         ) : results.length === 0 ? (
           <EmptyState />
@@ -100,27 +103,34 @@ export function ComparisonTable({ results, loading, error }: Props) {
 }
 
 function TableHeader() {
+  const columns: { label: string; align: "left" | "right" | "center" }[] = [
+    { label: STRINGS.columnName, align: "left" },
+    { label: STRINGS.columnSource, align: "left" },
+    { label: STRINGS.columnCurrentPrice, align: "right" },
+    { label: STRINGS.columnOriginalPrice, align: "right" },
+    { label: STRINGS.columnDiscount, align: "right" },
+    { label: STRINGS.columnRating, align: "right" },
+    { label: STRINGS.columnReviews, align: "right" },
+    { label: STRINGS.columnSuggestion, align: "center" },
+    { label: STRINGS.columnRank, align: "right" },
+    { label: STRINGS.columnLink, align: "left" },
+  ];
   return (
-    <thead className="sticky top-0 z-10" style={{ background: 'rgba(7, 9, 26, 0.9)', backdropFilter: 'blur(12px)' }}>
-      <tr className="border-b border-white/10">
-        {[
-          STRINGS.columnName,
-          STRINGS.columnSource,
-          STRINGS.columnCurrentPrice,
-          STRINGS.columnOriginalPrice,
-          STRINGS.columnDiscount,
-          STRINGS.columnRating,
-          STRINGS.columnReviews,
-          STRINGS.columnRank,
-          STRINGS.columnLink,
-        ].map((col, i) => (
+    <thead
+      className="sticky top-0 z-10"
+      style={{
+        background: "rgba(248, 250, 252, 0.95)",
+        backdropFilter: "blur(12px) saturate(160%)",
+        WebkitBackdropFilter: "blur(12px) saturate(160%)",
+      }}
+    >
+      <tr className="border-b border-slate-200">
+        {columns.map(({ label, align }, i) => (
           <th
             key={i}
-            className={`px-4 py-3 text-left text-[10px] font-semibold text-white/40 uppercase tracking-wider whitespace-nowrap ${
-              i >= 2 && i <= 7 ? "text-right" : ""
-            }`}
+            className={`px-4 py-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap text-${align}`}
           >
-            {col}
+            {label}
           </th>
         ))}
       </tr>
@@ -139,20 +149,20 @@ function SourceGroup({ source, items }: SourceGroupProps) {
     <>
       <tr>
         <td
-          colSpan={9}
-          className="px-4 py-2 border-y border-white/10"
-          style={{ background: `${theme.accent}12` }}
+          colSpan={COLUMN_COUNT}
+          className="px-4 py-2 border-y border-slate-200"
+          style={{ background: `${theme.accent}10` }}
         >
           <div className="flex items-center gap-2">
             <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm"
-              style={{ backgroundColor: theme.accent, boxShadow: `0 0 6px ${theme.accent}60` }}
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: theme.accent, boxShadow: `0 0 6px ${theme.accent}55` }}
               aria-hidden="true"
             />
             <span className="text-xs font-semibold" style={{ color: theme.accent }}>
-              {source}
+              {theme.label}
             </span>
-            <span className="text-xs text-white/30">
+            <span className="text-xs text-slate-500">
               — {items.length} {items.length === 1 ? "result" : "results"}
             </span>
           </div>
@@ -174,22 +184,22 @@ interface ProductRowProps {
 function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
   return (
     <tr
-      className="border-b border-white/5 hover:bg-white/5 transition-colors duration-100"
+      className="group border-b border-slate-100 hover:bg-slate-50 transition-colors duration-150"
       style={{ borderLeft: `3px solid ${accent}` }}
     >
       {/* Product name + image */}
-      <td className="px-4 py-3 max-w-[240px]">
+      <td className="px-4 py-2.5 max-w-[240px]">
         <div className="flex items-start gap-3">
           <ProductImage url={item.image_url} accent={accent} />
           <div className="min-w-0">
             <p
-              className="font-medium text-white/90 line-clamp-2 text-xs leading-snug"
+              className="font-medium text-slate-900 line-clamp-2 text-xs leading-snug"
               title={item.title}
             >
               {item.title}
             </p>
             {isTopMatch && (
-              <span className="inline-block mt-1 text-[9px] font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">
+              <span className="inline-flex items-center mt-1 text-[10px] font-medium uppercase tracking-wide text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-full px-2 py-0.5">
                 {STRINGS.topMatchBadge}
               </span>
             )}
@@ -198,69 +208,78 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
       </td>
 
       {/* Source */}
-      <td className="px-4 py-3 whitespace-nowrap">
+      <td className="px-4 py-2.5 whitespace-nowrap">
         <SourceBadge source={item.source} />
       </td>
 
       {/* Current price */}
-      <td className="px-4 py-3 text-right font-semibold text-white whitespace-nowrap text-xs">
+      <td className="px-4 py-2.5 text-right font-semibold text-slate-900 whitespace-nowrap text-xs">
         {formatINR(item.current_price)}
       </td>
 
       {/* Original price */}
-      <td className="px-4 py-3 text-right whitespace-nowrap">
+      <td className="px-4 py-2.5 text-right whitespace-nowrap">
         {item.original_price && item.current_price && item.original_price > item.current_price ? (
-          <span className="text-white/30 line-through text-xs">
+          <span className="text-slate-400 line-through text-xs">
             {formatINR(item.original_price)}
           </span>
         ) : (
-          <span className="text-white/30 text-xs">{formatINR(item.original_price)}</span>
+          <span className="text-slate-400 text-xs">{formatINR(item.original_price)}</span>
         )}
       </td>
 
       {/* Discount */}
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-2.5 text-right">
         {item.discount !== null && item.discount > 0 ? (
-          <span className="inline-block bg-emerald-400/15 text-emerald-400 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-400/20">
+          <span className="inline-flex items-center bg-emerald-50 text-emerald-700 text-[10px] font-medium uppercase tracking-wide px-2 py-0.5 rounded-full ring-1 ring-emerald-200">
             -{item.discount}%
           </span>
         ) : (
-          <span className="text-white/20 text-xs">—</span>
+          <span className="text-slate-300 text-xs">—</span>
         )}
       </td>
 
       {/* Rating */}
-      <td className="px-4 py-3 text-right">
+      <td className="px-4 py-2.5 text-right">
         <div className="flex justify-end">
           <RatingStars rating={item.rating} />
         </div>
       </td>
 
       {/* Reviews */}
-      <td className="px-4 py-3 text-right text-xs text-white/50 whitespace-nowrap">
+      <td className="px-4 py-2.5 text-right text-xs text-slate-600 whitespace-nowrap">
         {formatReviews(item.review_count)}
       </td>
 
+      {/* Buy? suggestion */}
+      <td className="px-4 py-2.5 text-center whitespace-nowrap">
+        {item.buy_suggestion ? (
+          <SuggestionBadge label={item.buy_suggestion} reason={item.suggestion_reason} />
+        ) : (
+          <span className="text-slate-300 text-xs">—</span>
+        )}
+      </td>
+
       {/* Rank */}
-      <td className="px-4 py-3 text-right text-xs text-white/50">
+      <td className="px-4 py-2.5 text-right text-xs text-slate-500">
         {item.rank !== null ? `#${item.rank}` : STRINGS.noRankLabel}
       </td>
 
       {/* View link */}
-      <td className="px-4 py-3">
+      <td className="px-4 py-2.5">
         {item.product_url ? (
           <a
             href={item.product_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-400 hover:text-indigo-300 whitespace-nowrap transition-colors"
+            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap transition-colors"
             aria-label={`View ${item.title} on ${item.source}`}
           >
             {STRINGS.viewButtonLabel}
             <ExternalLink size={11} aria-hidden="true" />
           </a>
         ) : (
-          <span className="text-white/20 text-xs">—</span>
+          <span className="text-slate-300 text-xs">—</span>
         )}
       </td>
     </tr>
@@ -278,7 +297,7 @@ function ProductImage({ url, accent }: ProductImageProps) {
       <img
         src={url}
         alt=""
-        className="w-10 h-10 rounded-lg object-contain flex-shrink-0 bg-white/10 p-0.5"
+        className="w-10 h-10 rounded-lg object-contain flex-shrink-0 bg-slate-50 p-0.5 ring-1 ring-slate-200 group-hover:ring-slate-300 transition"
         onError={(e) => {
           const el = e.currentTarget as HTMLImageElement;
           el.style.display = "none";
@@ -292,7 +311,10 @@ function ProductImage({ url, accent }: ProductImageProps) {
   return (
     <div
       className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center"
-      style={{ background: `${accent}18`, border: `1px solid ${accent}25` }}
+      style={{
+        background: `${accent}10`,
+        boxShadow: `inset 0 0 0 1px ${accent}25`,
+      }}
       aria-hidden="true"
     >
       <span className="text-base">📦</span>
