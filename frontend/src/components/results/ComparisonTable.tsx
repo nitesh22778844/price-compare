@@ -12,7 +12,7 @@ interface Props {
   error: string | null;
 }
 
-const COLUMN_COUNT = 10;
+const COLUMN_COUNT = 8;
 
 function formatINR(amount: number | null): string {
   if (amount === null) return "—";
@@ -23,11 +23,15 @@ function formatINR(amount: number | null): string {
   }).format(amount);
 }
 
-function formatReviews(count: number | null): string {
-  if (count === null) return "—";
-  if (count >= 100_000) return `${(count / 100_000).toFixed(1)}L`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
-  return String(count);
+function formatDate(value: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(d);
 }
 
 function groupBySource(listings: ProductListing[]): Map<string, ProductListing[]> {
@@ -107,12 +111,10 @@ function TableHeader() {
     { label: STRINGS.columnName, align: "left" },
     { label: STRINGS.columnSource, align: "left" },
     { label: STRINGS.columnCurrentPrice, align: "right" },
-    { label: STRINGS.columnOriginalPrice, align: "right" },
-    { label: STRINGS.columnDiscount, align: "right" },
     { label: STRINGS.columnRating, align: "right" },
-    { label: STRINGS.columnReviews, align: "right" },
+    { label: STRINGS.columnAvailability, align: "left" },
+    { label: STRINGS.columnLastOrdered, align: "left" },
     { label: STRINGS.columnSuggestion, align: "center" },
-    { label: STRINGS.columnRank, align: "right" },
     { label: STRINGS.columnLink, align: "left" },
   ];
   return (
@@ -217,28 +219,6 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
         {formatINR(item.current_price)}
       </td>
 
-      {/* Original price */}
-      <td className="px-4 py-2.5 text-right whitespace-nowrap">
-        {item.original_price && item.current_price && item.original_price > item.current_price ? (
-          <span className="text-slate-400 line-through text-xs">
-            {formatINR(item.original_price)}
-          </span>
-        ) : (
-          <span className="text-slate-400 text-xs">{formatINR(item.original_price)}</span>
-        )}
-      </td>
-
-      {/* Discount */}
-      <td className="px-4 py-2.5 text-right">
-        {item.discount !== null && item.discount > 0 ? (
-          <span className="inline-flex items-center bg-emerald-50 text-emerald-700 text-[10px] font-medium uppercase tracking-wide px-2 py-0.5 rounded-full ring-1 ring-emerald-200">
-            -{item.discount}%
-          </span>
-        ) : (
-          <span className="text-slate-300 text-xs">—</span>
-        )}
-      </td>
-
       {/* Rating */}
       <td className="px-4 py-2.5 text-right">
         <div className="flex justify-end">
@@ -246,9 +226,18 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
         </div>
       </td>
 
-      {/* Reviews */}
-      <td className="px-4 py-2.5 text-right text-xs text-slate-600 whitespace-nowrap">
-        {formatReviews(item.review_count)}
+      {/* Availability */}
+      <td className="px-4 py-2.5 text-xs whitespace-nowrap">
+        {item.availability ? (
+          <span className="text-slate-700">{item.availability}</span>
+        ) : (
+          <span className="text-slate-300">—</span>
+        )}
+      </td>
+
+      {/* Last ordered date */}
+      <td className="px-4 py-2.5 text-xs text-slate-600 whitespace-nowrap">
+        {formatDate(item.last_ordered_date)}
       </td>
 
       {/* Buy? suggestion */}
@@ -258,11 +247,6 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
         ) : (
           <span className="text-slate-300 text-xs">—</span>
         )}
-      </td>
-
-      {/* Rank */}
-      <td className="px-4 py-2.5 text-right text-xs text-slate-500">
-        {item.rank !== null ? `#${item.rank}` : STRINGS.noRankLabel}
       </td>
 
       {/* View link */}

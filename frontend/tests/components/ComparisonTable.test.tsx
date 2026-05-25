@@ -16,6 +16,7 @@ function makeListing(overrides: Partial<ProductListing> = {}): ProductListing {
     rank: 1,
     product_url: "https://amazon.in/dp/x",
     image_url: null,
+    availability: "In Stock",
     last_ordered_date: null,
     times_purchased: null,
     buy_suggestion: null,
@@ -62,17 +63,26 @@ describe("ComparisonTable", () => {
     expect(badges).toHaveLength(1);
   });
 
-  it("renders green discount pill", () => {
-    render(<ComparisonTable results={[makeListing({ discount: 15 })]} loading={false} error={null} />);
-    expect(screen.getByText("-15%")).toBeInTheDocument();
+  it("renders availability text", () => {
+    render(
+      <ComparisonTable
+        results={[makeListing({ availability: "Out of Stock" })]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByText("Out of Stock")).toBeInTheDocument();
   });
 
-  it("renders strikethrough original price when higher", () => {
-    const { container } = render(
-      <ComparisonTable results={[makeListing()]} loading={false} error={null} />
+  it("renders formatted last ordered date", () => {
+    render(
+      <ComparisonTable
+        results={[makeListing({ last_ordered_date: "2026-04-12" })]}
+        loading={false}
+        error={null}
+      />,
     );
-    const strikethrough = container.querySelector(".line-through");
-    expect(strikethrough).not.toBeNull();
+    expect(screen.getByText(/12 Apr 2026/)).toBeInTheDocument();
   });
 
   it("renders View link with correct href", () => {

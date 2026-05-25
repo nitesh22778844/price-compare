@@ -28,6 +28,7 @@ export interface ProductListing {
   rank: number | null;
   product_url: string | null;
   image_url: string | null;
+  availability: string | null;
   last_ordered_date: string | null;
   times_purchased: number | null;
   buy_suggestion: BuySuggestion | null;
