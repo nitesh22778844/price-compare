@@ -26,6 +26,9 @@ def override_settings(monkeypatch):
         sf_results_per_source=3,
         openrouter_api_key="test_openrouter_key",
         openrouter_model="openai/gpt-4o",
+        refresh_amazon_url="https://refresh.test/amazon",
+        refresh_flipkart_url="https://refresh.test/flipkart",
+        refresh_orders=2,
         cors_allow_origins="http://localhost:5173",
         log_level="DEBUG",
     )

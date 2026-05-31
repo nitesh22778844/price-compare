@@ -5,8 +5,15 @@ import httpx
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.models.schemas import ChatMessage, ProductQuery
+from app.services.refresh import SOURCE_LABELS, trigger_refresh
 
 logger = get_logger(__name__)
+
+# Maps refresh tool names → source key understood by the refresh service.
+_REFRESH_TOOLS: dict[str, str] = {
+    "refresh_amazon_products": "amazon",
+    "refresh_flipkart_products": "flipkart",
+}
 
 _SYSTEM_PROMPT = (
     "You are a helpful shopping assistant for Indian consumers. "
@@ -20,6 +27,10 @@ _SYSTEM_PROMPT = (
     "Examples: 'Give me price of any pen drive' -> query='pen drive'. "
     "'Find a gaming laptop under 80000' -> query='gaming laptop', max_price=80000. "
     "'Show me the best iPhone 15 Pro 256GB' -> query='iPhone 15 Pro 256GB'. "
+    "If the user asks to refresh, update, reload, or re-scrape the products for a specific store, "
+    "call the matching tool instead of `search_products`: 'refresh products for Amazon' / "
+    "'refresh Amazon products' -> call `refresh_amazon_products`; 'refresh products for Flipkart' "
+    "-> call `refresh_flipkart_products`. These refresh tools take no arguments. "
     "Only reply conversationally (without calling the tool) if the user is clearly NOT asking "
     "about a product (e.g. greetings, thanks). Never invent prices, ratings, or availability."
 )
@@ -63,6 +74,30 @@ _SEARCH_TOOL: dict = {
     },
 }
 
+_REFRESH_AMAZON_TOOL: dict = {
+    "type": "function",
+    "function": {
+        "name": "refresh_amazon_products",
+        "description": (
+            "Trigger a backend refresh of the Amazon product catalog. Call this when the user "
+            "asks to refresh, update, reload, or re-scrape Amazon products. Takes no arguments."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+}
+
+_REFRESH_FLIPKART_TOOL: dict = {
+    "type": "function",
+    "function": {
+        "name": "refresh_flipkart_products",
+        "description": (
+            "Trigger a backend refresh of the Flipkart product catalog. Call this when the user "
+            "asks to refresh, update, reload, or re-scrape Flipkart products. Takes no arguments."
+        ),
+        "parameters": {"type": "object", "properties": {}},
+    },
+}
+
 
 class OpenRouterClient:
     _BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -78,7 +113,7 @@ class OpenRouterClient:
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 *[{"role": m.role, "content": m.content} for m in messages],
             ],
-            "tools": [_SEARCH_TOOL],
+            "tools": [_SEARCH_TOOL, _REFRESH_AMAZON_TOOL, _REFRESH_FLIPKART_TOOL],
             "tool_choice": "auto",
         }
 
@@ -106,6 +141,19 @@ class OpenRouterClient:
         tool_calls = msg.get("tool_calls") or []
         if tool_calls:
             tc = tool_calls[0]
+            name = tc["function"]["name"]
+
+            if name in _REFRESH_TOOLS:
+                source = _REFRESH_TOOLS[name]
+                await trigger_refresh(source)
+                label = SOURCE_LABELS.get(source, source)
+                reply = msg.get("content") or (
+                    f"Triggered a refresh for {label} products. "
+                    "Updated data will appear shortly — search again in a moment."
+                )
+                logger.info("Tool call: %s", name)
+                return reply, None
+
             try:
                 args = json.loads(tc["function"]["arguments"])
             except (json.JSONDecodeError, KeyError) as exc:

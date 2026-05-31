@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     openrouter_model: str = "openai/gpt-oss-120b"
 
+    # Product refresh triggers (fire-and-forget, no auth)
+    refresh_amazon_url: str = ""
+    refresh_flipkart_url: str = ""
+    refresh_orders: int = 2  # POST body: {"orders": <n>}
+
     # App
     cors_allow_origins: str = "http://localhost:5173"
     log_level: str = "INFO"

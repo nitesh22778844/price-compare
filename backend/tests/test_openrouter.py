@@ -41,6 +41,26 @@ def tool_call_response(query: str, extra_args: dict | None = None) -> dict:
     }
 
 
+def refresh_tool_response(name: str) -> dict:
+    return {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": "call_refresh",
+                            "type": "function",
+                            "function": {"name": name, "arguments": "{}"},
+                        }
+                    ],
+                }
+            }
+        ]
+    }
+
+
 def text_response(content: str) -> dict:
     return {
         "choices": [
@@ -102,6 +122,42 @@ async def test_tool_call_with_full_args():
     assert pq.min_price == 40000
     assert pq.max_price == 80000
     assert pq.brand == "OnePlus"
+
+
+@pytest.mark.asyncio
+async def test_request_includes_refresh_tools():
+    client = make_client()
+    with respx.mock:
+        route = respx.post(OPENROUTER_URL).mock(
+            return_value=httpx.Response(200, json=tool_call_response("OnePlus 12"))
+        )
+        await client.chat(MESSAGES)
+
+    payload = json.loads(route.calls[0].request.content)
+    tool_names = {t["function"]["name"] for t in payload["tools"]}
+    assert {"refresh_amazon_products", "refresh_flipkart_products"} <= tool_names
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "tool_name, refresh_url",
+    [
+        ("refresh_amazon_products", "https://refresh.test/amazon"),
+        ("refresh_flipkart_products", "https://refresh.test/flipkart"),
+    ],
+)
+async def test_refresh_tool_triggers_endpoint(tool_name, refresh_url):
+    client = make_client()
+    with respx.mock:
+        respx.post(OPENROUTER_URL).mock(
+            return_value=httpx.Response(200, json=refresh_tool_response(tool_name))
+        )
+        refresh_route = respx.post(refresh_url).mock(return_value=httpx.Response(202))
+        reply, pq = await client.chat(MESSAGES)
+
+    assert refresh_route.called
+    assert pq is None
+    assert "refresh" in reply.lower()
 
 
 @pytest.mark.asyncio
