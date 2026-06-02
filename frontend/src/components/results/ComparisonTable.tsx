@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 import type { ProductListing } from "../../lib/types";
 import { getSourceTheme } from "../../lib/source-theme";
 import { STRINGS } from "../../lib/strings";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { SourceBadge } from "./SourceBadge";
 import { RatingStars } from "./RatingStars";
 import { SuggestionBadge } from "./SuggestionBadge";
@@ -56,6 +57,21 @@ function SkeletonRow() {
   );
 }
 
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
+      <div className="flex gap-3">
+        <div className="shimmer w-12 h-12 rounded-lg flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="shimmer h-4 rounded w-3/4" />
+          <div className="shimmer h-3 rounded w-1/3" />
+        </div>
+      </div>
+      <div className="shimmer h-5 rounded w-1/4 mt-3" />
+    </div>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center fade-up">
@@ -68,40 +84,62 @@ function EmptyState() {
   );
 }
 
+function ErrorState({ detail }: { detail: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center fade-up">
+      <div className="w-20 h-20 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-4 shadow-sm">
+        <span className="text-4xl" role="img" aria-label="error">⚠️</span>
+      </div>
+      <p className="text-red-700 font-medium text-base">{STRINGS.tableErrorHeading}</p>
+      <p className="text-slate-500 text-sm mt-1.5">{detail}</p>
+    </div>
+  );
+}
+
 export function ComparisonTable({ results, loading, error }: Props) {
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const groups = groupBySource(results);
+
+  let body: React.ReactNode;
+  if (loading) {
+    body = isMobile ? (
+      <div className="p-3 space-y-3" aria-label="Loading product results" role="status">
+        {Array.from({ length: 4 }, (_, i) => <SkeletonCard key={i} />)}
+      </div>
+    ) : (
+      <table className="w-full border-collapse text-sm" aria-label="Loading product results">
+        <TableHeader />
+        <tbody>{Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}</tbody>
+      </table>
+    );
+  } else if (error) {
+    body = <ErrorState detail={error} />;
+  } else if (results.length === 0) {
+    body = <EmptyState />;
+  } else if (isMobile) {
+    body = (
+      <div className="p-3 space-y-5">
+        {Array.from(groups.entries()).map(([source, items]) => (
+          <MobileSourceGroup key={source} source={source} items={items} />
+        ))}
+      </div>
+    );
+  } else {
+    body = (
+      <table className="w-full border-collapse text-sm" aria-label="Product comparison results">
+        <TableHeader />
+        <tbody>
+          {Array.from(groups.entries()).map(([source, items]) => (
+            <SourceGroup key={source} source={source} items={items} />
+          ))}
+        </tbody>
+      </table>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-white">
-      <div className="flex-1 overflow-auto scrollbar-thin">
-        {loading ? (
-          <table className="w-full border-collapse text-sm" aria-label="Loading product results">
-            <TableHeader />
-            <tbody>
-              {Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}
-            </tbody>
-          </table>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center fade-up">
-            <div className="w-20 h-20 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-4 shadow-sm">
-              <span className="text-4xl" role="img" aria-label="error">⚠️</span>
-            </div>
-            <p className="text-red-700 font-medium text-base">{STRINGS.tableErrorHeading}</p>
-            <p className="text-slate-500 text-sm mt-1.5">{error}</p>
-          </div>
-        ) : results.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <table className="w-full border-collapse text-sm" aria-label="Product comparison results">
-            <TableHeader />
-            <tbody>
-              {Array.from(groups.entries()).map(([source, items]) => (
-                <SourceGroup key={source} source={source} items={items} />
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <div className="flex-1 overflow-auto scrollbar-thin">{body}</div>
     </div>
   );
 }
@@ -267,6 +305,115 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
         )}
       </td>
     </tr>
+  );
+}
+
+/* ── Mobile card layout (rendered below the `md` breakpoint) ─────────────── */
+
+function MobileSourceGroup({ source, items }: SourceGroupProps) {
+  const theme = getSourceTheme(source);
+  return (
+    <section>
+      <div className="flex items-center gap-2 px-1 mb-2">
+        <span
+          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: theme.accent, boxShadow: `0 0 6px ${theme.accent}55` }}
+          aria-hidden="true"
+        />
+        <span className="text-xs font-semibold" style={{ color: theme.accent }}>
+          {theme.label}
+        </span>
+        <span className="text-xs text-slate-500">
+          — {items.length} {items.length === 1 ? "result" : "results"}
+        </span>
+      </div>
+      <div className="space-y-3">
+        {items.map((item, idx) => (
+          <MobileCard key={item.id} item={item} isTopMatch={idx === 0} accent={theme.accent} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MobileCard({ item, isTopMatch, accent }: ProductRowProps) {
+  return (
+    <article
+      className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm"
+      style={{ borderLeft: `3px solid ${accent}` }}
+    >
+      {/* Header: image + title + source */}
+      <div className="flex gap-3">
+        <ProductImage url={item.image_url} accent={accent} />
+        <div className="min-w-0 flex-1">
+          <p
+            className="font-medium text-slate-900 text-sm leading-snug line-clamp-2"
+            title={item.title}
+          >
+            {item.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            <SourceBadge source={item.source} />
+            {isTopMatch && (
+              <span className="inline-flex items-center text-[10px] font-medium uppercase tracking-wide text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-full px-2 py-0.5">
+                {STRINGS.topMatchBadge}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Price + rating + View */}
+      <div className="flex items-end justify-between gap-3 mt-3">
+        <div className="min-w-0">
+          <div className="text-lg font-bold text-slate-900 leading-none">
+            {formatINR(item.current_price)}
+          </div>
+          <div className="mt-1.5">
+            <RatingStars rating={item.rating} />
+          </div>
+        </div>
+        {item.product_url && (
+          <a
+            href={item.product_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 transition-colors"
+            aria-label={`View ${item.title} on ${item.source}`}
+          >
+            {STRINGS.viewButtonLabel}
+            <ExternalLink size={12} aria-hidden="true" />
+          </a>
+        )}
+      </div>
+
+      {/* Meta: availability · last ordered · buy suggestion */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-3 pt-3 border-t border-slate-100">
+        <Meta label={STRINGS.columnAvailability} value={item.availability ?? "—"} />
+        <Meta label={STRINGS.columnLastOrdered} value={formatDate(item.last_ordered_date)} />
+        {item.buy_suggestion && (
+          <div className="col-span-2 flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              {STRINGS.columnSuggestion}
+            </span>
+            <SuggestionBadge label={item.buy_suggestion} reason={item.suggestion_reason} />
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+        {label}
+      </div>
+      <div className="text-xs text-slate-700 truncate" title={value}>
+        {value}
+      </div>
+    </div>
   );
 }
 

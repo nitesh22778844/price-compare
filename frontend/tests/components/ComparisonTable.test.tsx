@@ -1,7 +1,21 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { ComparisonTable } from "../../src/components/results/ComparisonTable";
 import type { ProductListing } from "../../src/lib/types";
+
+/** Force `useMediaQuery` to report a mobile viewport for the duration of a test. */
+function mockMobileViewport(isMobile: boolean) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: isMobile,
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  });
+}
 
 function makeListing(overrides: Partial<ProductListing> = {}): ProductListing {
   return {
@@ -121,5 +135,40 @@ describe("ComparisonTable", () => {
       />,
     );
     expect(screen.getByText(/frequent buy/i)).toBeInTheDocument();
+  });
+});
+
+describe("ComparisonTable — mobile card layout", () => {
+  afterEach(() => {
+    // Restore the jsdom default (no matchMedia → desktop) for other suites.
+    delete (window as { matchMedia?: unknown }).matchMedia;
+    vi.restoreAllMocks();
+  });
+
+  it("renders product cards instead of a table on mobile", () => {
+    mockMobileViewport(true);
+    render(<ComparisonTable results={[makeListing()]} loading={false} error={null} />);
+    // No table is rendered on mobile…
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    // …but the product content still appears as a card.
+    expect(screen.getByText("OnePlus 12 5G")).toBeInTheDocument();
+    expect(screen.getByText(/— 1 result/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view/i })).toHaveAttribute(
+      "href",
+      "https://amazon.in/dp/x",
+    );
+  });
+
+  it("shows card skeletons while loading on mobile", () => {
+    mockMobileViewport(true);
+    render(<ComparisonTable results={[]} loading error={null} />);
+    expect(screen.getByLabelText(/loading product results/i)).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("renders the desktop table when not mobile", () => {
+    mockMobileViewport(false);
+    render(<ComparisonTable results={[makeListing()]} loading={false} error={null} />);
+    expect(screen.getByRole("table")).toBeInTheDocument();
   });
 });
