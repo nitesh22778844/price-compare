@@ -1,7 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
 import { describe, it, expect, afterEach, vi } from "vitest";
+import type { ReactNode } from "react";
 import { ComparisonTable } from "../../src/components/results/ComparisonTable";
+import { CartProvider } from "../../src/hooks/useCart";
 import type { ProductListing } from "../../src/lib/types";
+
+// ComparisonTable renders AddToCartButton, which needs a CartProvider in scope.
+const render = (ui: ReactNode) => rtlRender(<CartProvider>{ui}</CartProvider>);
 
 /** Force `useMediaQuery` to report a mobile viewport for the duration of a test. */
 function mockMobileViewport(isMobile: boolean) {

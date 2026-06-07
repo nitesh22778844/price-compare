@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Sparkles, MessageSquare, LayoutGrid } from "lucide-react";
+import { Sparkles, MessageSquare, LayoutGrid, ShoppingCart } from "lucide-react";
 import { useChat } from "../hooks/useChat";
 import { useRecommendations } from "../hooks/useRecommendations";
+import { useCart } from "../hooks/useCart";
 import { ChatWindow } from "../components/chat/ChatWindow";
 import { ComparisonTable } from "../components/results/ComparisonTable";
 import { RecommendationsDrawer } from "../components/recommendations/RecommendationsDrawer";
+import { CartDrawer } from "../components/cart/CartDrawer";
 import { STRINGS } from "../lib/strings";
 
 type MobileTab = "chat" | "results";
@@ -13,7 +15,9 @@ export default function App() {
   const { messages, input, setInput, isLoading, sendMessage, submitExample, productSearch } =
     useChat();
   const recommendations = useRecommendations();
+  const cart = useCart();
   const [recsOpen, setRecsOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<MobileTab>("chat");
 
   const resultCount = productSearch.results.length;
@@ -45,6 +49,20 @@ export default function App() {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            aria-label={`${STRINGS.cartButton} (${cart.count})`}
+            className="relative inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 px-3 sm:px-3.5 py-1.5 rounded-full border border-slate-200 bg-white hover:bg-slate-50 transition"
+          >
+            <ShoppingCart size={14} aria-hidden="true" />
+            <span className="hidden sm:inline">{STRINGS.cartButton}</span>
+            {cart.count > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-indigo-600 text-white">
+                {cart.count}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => setRecsOpen(true)}
@@ -140,6 +158,8 @@ export default function App() {
         onClose={() => setRecsOpen(false)}
         state={recommendations}
       />
+
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 }

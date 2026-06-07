@@ -4,6 +4,7 @@ import type { RecommendationItem } from "../../lib/types";
 import type { RecommendationsState } from "../../hooks/useRecommendations";
 import { getSourceTheme, SUPPORTED_SOURCES } from "../../lib/source-theme";
 import { STRINGS } from "../../lib/strings";
+import { AddToCartButton } from "../cart/AddToCartButton";
 
 interface Props {
   open: boolean;
@@ -240,18 +241,21 @@ function RecommendationCard({ item }: { item: RecommendationItem }) {
         <p className="text-xs text-slate-500 leading-relaxed mt-2">{item.reasoning}</p>
       )}
 
-      {item.product_url && (
-        <a
-          href={item.product_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 mt-3 transition-colors"
-          aria-label={`View ${item.product_name}`}
-        >
-          {STRINGS.viewButtonLabel}
-          <ExternalLink size={11} aria-hidden="true" />
-        </a>
-      )}
+      <div className="flex items-center gap-3 mt-3">
+        <AddToCartButton name={item.product_name} source={source} size="md" />
+        {item.product_url && (
+          <a
+            href={item.product_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+            aria-label={`View ${item.product_name}`}
+          >
+            {STRINGS.viewButtonLabel}
+            <ExternalLink size={11} aria-hidden="true" />
+          </a>
+        )}
+      </div>
     </div>
   );
 }

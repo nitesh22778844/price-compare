@@ -1,8 +1,13 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
+import type { ReactNode } from "react";
 import { RecommendationsDrawer } from "../../src/components/recommendations/RecommendationsDrawer";
+import { CartProvider } from "../../src/hooks/useCart";
 import type { RecommendationsState } from "../../src/hooks/useRecommendations";
 import type { RecommendationItem } from "../../src/lib/types";
+
+// RecommendationsDrawer renders AddToCartButton, which needs a CartProvider.
+const render = (ui: ReactNode) => rtlRender(<CartProvider>{ui}</CartProvider>);
 
 function makeItem(overrides: Partial<RecommendationItem> = {}): RecommendationItem {
   return {

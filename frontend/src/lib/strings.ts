@@ -53,4 +53,17 @@ export const STRINGS = {
   recommendationsErrorHeading: "Couldn't load recommendations",
   recommendationsClose: "Close recommendations",
   recommendationsRatingUnavailable: "Not available",
+
+  cartButton: "Cart",
+  cartTitle: "Your Cart",
+  cartSubtitle: "Review items, then submit your order",
+  cartClose: "Close cart",
+  cartEmptyHeading: "Your cart is empty",
+  cartEmptySubtext: "Add products from the comparison table or recommendations.",
+  addToCart: "Add",
+  addedToCart: "Added",
+  removeFromCart: "Remove from cart",
+  cartSubmit: "Submit Order",
+  cartSubmitting: "Submitting…",
+  cartSubmitError: "Couldn't submit your order",
 } as const;

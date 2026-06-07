@@ -27,6 +27,10 @@ class Settings(BaseSettings):
         "https://insight-generation-production.up.railway.app/api/insights/next-purchase"
     )
 
+    # Cart checkout (bulk order submission) — external purchasing apps
+    cart_flipkart_url: str = "https://purchase-history-production.up.railway.app/api/cart"
+    cart_amazon_url: str = ""  # to be wired later
+
     # App
     cors_allow_origins: str = "http://localhost:5173"
     log_level: str = "INFO"

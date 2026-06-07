@@ -69,3 +69,17 @@ export interface RecommendationResponse {
 export interface UIMessage extends ChatMessage {
   id: string;
 }
+
+export interface CartItem {
+  name: string;
+  source: string | null;
+}
+
+export interface CartCheckoutRequest {
+  products: string[];
+}
+
+export interface CartCheckoutResponse {
+  submitted: number;
+  detail: string;
+}

@@ -1,4 +1,6 @@
 import type {
+  CartCheckoutRequest,
+  CartCheckoutResponse,
   ChatRequest,
   ChatResponse,
   ProductQuery,
@@ -37,4 +39,6 @@ export const api = {
   getRecommendations: (
     req: RecommendationRequest,
   ): Promise<RecommendationResponse> => post("/recommendations/next-purchase", req),
+  checkoutCart: (req: CartCheckoutRequest): Promise<CartCheckoutResponse> =>
+    post("/cart/checkout", req),
 };

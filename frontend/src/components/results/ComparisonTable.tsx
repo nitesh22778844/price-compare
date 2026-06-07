@@ -6,6 +6,7 @@ import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { SourceBadge } from "./SourceBadge";
 import { RatingStars } from "./RatingStars";
 import { SuggestionBadge } from "./SuggestionBadge";
+import { AddToCartButton } from "../cart/AddToCartButton";
 
 interface Props {
   results: ProductListing[];
@@ -13,7 +14,7 @@ interface Props {
   error: string | null;
 }
 
-const COLUMN_COUNT = 8;
+const COLUMN_COUNT = 9;
 
 function formatINR(amount: number | null): string {
   if (amount === null) return "—";
@@ -154,6 +155,7 @@ function TableHeader() {
     { label: STRINGS.columnLastOrdered, align: "left" },
     { label: STRINGS.columnSuggestion, align: "center" },
     { label: STRINGS.columnLink, align: "left" },
+    { label: STRINGS.cartButton, align: "left" },
   ];
   return (
     <thead
@@ -304,6 +306,11 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
           <span className="text-slate-300 text-xs">—</span>
         )}
       </td>
+
+      {/* Add to cart */}
+      <td className="px-4 py-2.5 whitespace-nowrap">
+        <AddToCartButton name={item.title} source={item.source} />
+      </td>
     </tr>
   );
 }
@@ -373,18 +380,21 @@ function MobileCard({ item, isTopMatch, accent }: ProductRowProps) {
             <RatingStars rating={item.rating} />
           </div>
         </div>
-        {item.product_url && (
-          <a
-            href={item.product_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 transition-colors"
-            aria-label={`View ${item.title} on ${item.source}`}
-          >
-            {STRINGS.viewButtonLabel}
-            <ExternalLink size={12} aria-hidden="true" />
-          </a>
-        )}
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <AddToCartButton name={item.title} source={item.source} size="md" />
+          {item.product_url && (
+            <a
+              href={item.product_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 transition-colors"
+              aria-label={`View ${item.title} on ${item.source}`}
+            >
+              {STRINGS.viewButtonLabel}
+              <ExternalLink size={12} aria-hidden="true" />
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Meta: availability · last ordered · buy suggestion */}

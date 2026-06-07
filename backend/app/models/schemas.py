@@ -68,3 +68,12 @@ class RecommendationItem(BaseModel):
 class RecommendationResponse(BaseModel):
     insight_message: str
     recommendations: list[RecommendationItem]
+
+
+class CartCheckoutRequest(BaseModel):
+    products: list[str] = Field(..., min_length=1)
+
+
+class CartCheckoutResponse(BaseModel):
+    submitted: int  # count of products sent
+    detail: str  # human-readable confirmation
