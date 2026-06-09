@@ -16,6 +16,7 @@ function makeItem(overrides: Partial<RecommendationItem> = {}): RecommendationIt
     price: 324,
     reasoning: "Last purchased 9 days ago; now on sale.",
     rating: "Not available",
+    highlights: [],
     ...overrides,
   };
 }
@@ -81,6 +82,21 @@ describe("RecommendationsDrawer", () => {
     expect(screen.getByText(/last purchased 9 days ago/i)).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /view aashirvaad/i });
     expect(link).toHaveAttribute("target", "_blank");
+  });
+
+  it("renders highlight chips when present", () => {
+    render(
+      <RecommendationsDrawer
+        open
+        onClose={() => {}}
+        state={makeState({
+          insight: "i",
+          recommendations: [makeItem({ highlights: ["On sale now", "Daily staple"] })],
+        })}
+      />,
+    );
+    expect(screen.getByText("On sale now")).toBeInTheDocument();
+    expect(screen.getByText("Daily staple")).toBeInTheDocument();
   });
 
   it("hides rating when 'Not available'", () => {

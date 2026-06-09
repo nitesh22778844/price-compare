@@ -21,6 +21,15 @@ function formatINR(amount: number | null): string {
   }).format(amount);
 }
 
+/** Vibrant palette cycled across a card's highlight chips. */
+const HIGHLIGHT_COLORS = [
+  { text: "#047857", bg: "#ECFDF5", border: "#A7F3D0" }, // emerald
+  { text: "#B45309", bg: "#FFFBEB", border: "#FDE68A" }, // amber
+  { text: "#0369A1", bg: "#F0F9FF", border: "#BAE6FD" }, // sky
+  { text: "#6D28D9", bg: "#F5F3FF", border: "#DDD6FE" }, // violet
+  { text: "#BE123C", bg: "#FFF1F2", border: "#FECDD3" }, // rose
+];
+
 /** Infer a store from the product URL host so cards can show a source chip. */
 function inferSource(url: string | null): string | null {
   if (!url) return null;
@@ -239,6 +248,24 @@ function RecommendationCard({ item }: { item: RecommendationItem }) {
 
       {item.reasoning && (
         <p className="text-xs text-slate-500 leading-relaxed mt-2">{item.reasoning}</p>
+      )}
+
+      {item.highlights?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {item.highlights.map((h, i) => {
+            const c = HIGHLIGHT_COLORS[i % HIGHLIGHT_COLORS.length];
+            return (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2 py-0.5 border"
+                style={{ color: c.text, background: c.bg, borderColor: c.border }}
+              >
+                <Sparkles size={10} aria-hidden="true" />
+                {h}
+              </span>
+            );
+          })}
+        </div>
       )}
 
       <div className="flex items-center gap-3 mt-3">

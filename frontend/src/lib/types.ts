@@ -58,6 +58,7 @@ export interface RecommendationItem {
   price: number | null;
   reasoning: string | null;
   rating: string | null;
+  highlights: string[];
 }
 
 export interface RecommendationResponse {
