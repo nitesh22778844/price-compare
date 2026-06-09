@@ -29,6 +29,7 @@ function makeListing(overrides: Partial<ProductListing> = {}): ProductListing {
     source: "Amazon",
     current_price: 62000,
     original_price: 70000,
+    last_purchased_price: null,
     discount: 11,
     rating: "4.5",
     review_count: 5000,
@@ -141,6 +142,56 @@ describe("ComparisonTable", () => {
     );
     expect(screen.getByText(/frequent buy/i)).toBeInTheDocument();
   });
+
+  it("renders the Last Paid and Trend column headers", () => {
+    render(<ComparisonTable results={[makeListing()]} loading={false} error={null} />);
+    expect(screen.getByText("Last Paid")).toBeInTheDocument();
+    expect(screen.getByText("Trend")).toBeInTheDocument();
+  });
+
+  it("renders the last purchased price", () => {
+    render(
+      <ComparisonTable
+        results={[makeListing({ current_price: 62000, last_purchased_price: 59999 })]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByText("₹59,999")).toBeInTheDocument();
+  });
+
+  it("shows an up trend when current price is above last paid", () => {
+    render(
+      <ComparisonTable
+        results={[makeListing({ current_price: 62000, last_purchased_price: 59000 })]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByLabelText(/up .* versus last paid/i)).toBeInTheDocument();
+  });
+
+  it("shows a down trend when current price is below last paid", () => {
+    render(
+      <ComparisonTable
+        results={[makeListing({ current_price: 59000, last_purchased_price: 62000 })]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByLabelText(/down .* versus last paid/i)).toBeInTheDocument();
+  });
+
+  it("shows a neutral trend when last paid is unknown", () => {
+    render(
+      <ComparisonTable
+        results={[makeListing({ last_purchased_price: null })]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByLabelText(/no price change/i)).toBeInTheDocument();
+  });
 });
 
 describe("ComparisonTable — mobile card layout", () => {
@@ -175,5 +226,18 @@ describe("ComparisonTable — mobile card layout", () => {
     mockMobileViewport(false);
     render(<ComparisonTable results={[makeListing()]} loading={false} error={null} />);
     expect(screen.getByRole("table")).toBeInTheDocument();
+  });
+
+  it("shows last paid price and trend on a mobile card", () => {
+    mockMobileViewport(true);
+    render(
+      <ComparisonTable
+        results={[makeListing({ current_price: 62000, last_purchased_price: 59000 })]}
+        loading={false}
+        error={null}
+      />,
+    );
+    expect(screen.getByText(/Last Paid: ₹59,000/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/up .* versus last paid/i)).toBeInTheDocument();
   });
 });

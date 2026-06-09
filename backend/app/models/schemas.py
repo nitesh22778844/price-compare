@@ -26,6 +26,7 @@ class ProductListing(BaseModel):
     source: str
     current_price: float | None = None
     original_price: float | None = None
+    last_purchased_price: float | None = None
     discount: int | None = None
     rating: str | None = None
     review_count: int | None = None

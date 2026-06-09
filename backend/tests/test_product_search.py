@@ -17,6 +17,7 @@ def make_record(**kwargs) -> dict:
         "Source__c": "Amazon",
         "Current_Price__c": 60000.0,
         "Original_Price__c": 70000.0,
+        "Last_Purchased_Price__c": None,
         "Discount__c": None,
         "Rating__c": "4.5",
         "Review_Count__c": 1000,
@@ -122,6 +123,21 @@ def test_normalize_passes_through_availability():
 def test_normalize_availability_none_when_absent():
     listing = _normalize(make_record(Availability__c=None))
     assert listing.availability is None
+
+
+def test_normalize_parses_last_purchased_price():
+    listing = _normalize(make_record(Last_Purchased_Price__c=59999))
+    assert listing.last_purchased_price == 59999.0
+
+
+def test_normalize_last_purchased_price_none_when_absent():
+    listing = _normalize(make_record(Last_Purchased_Price__c=None))
+    assert listing.last_purchased_price is None
+
+
+def test_normalize_last_purchased_price_none_when_unparseable():
+    listing = _normalize(make_record(Last_Purchased_Price__c="N/A"))
+    assert listing.last_purchased_price is None
 
 
 # ── rank_and_group ────────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import { STRINGS } from "../../lib/strings";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { SourceBadge } from "./SourceBadge";
 import { RatingStars } from "./RatingStars";
+import { PriceTrend } from "./PriceTrend";
 import { SuggestionBadge } from "./SuggestionBadge";
 import { AddToCartButton } from "../cart/AddToCartButton";
 
@@ -14,7 +15,7 @@ interface Props {
   error: string | null;
 }
 
-const COLUMN_COUNT = 9;
+const COLUMN_COUNT = 11;
 
 function formatINR(amount: number | null): string {
   if (amount === null) return "—";
@@ -150,6 +151,8 @@ function TableHeader() {
     { label: STRINGS.columnName, align: "left" },
     { label: STRINGS.columnSource, align: "left" },
     { label: STRINGS.columnCurrentPrice, align: "right" },
+    { label: STRINGS.columnLastPaid, align: "right" },
+    { label: STRINGS.columnTrend, align: "right" },
     { label: STRINGS.columnRating, align: "right" },
     { label: STRINGS.columnAvailability, align: "left" },
     { label: STRINGS.columnLastOrdered, align: "left" },
@@ -257,6 +260,18 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
       {/* Current price */}
       <td className="px-4 py-2.5 text-right font-semibold text-slate-900 whitespace-nowrap text-xs">
         {formatINR(item.current_price)}
+      </td>
+
+      {/* Last purchased price */}
+      <td className="px-4 py-2.5 text-right text-slate-600 whitespace-nowrap text-xs">
+        {formatINR(item.last_purchased_price)}
+      </td>
+
+      {/* Price trend vs last paid */}
+      <td className="px-4 py-2.5 text-right">
+        <div className="flex justify-end">
+          <PriceTrend current={item.current_price} lastPaid={item.last_purchased_price} />
+        </div>
       </td>
 
       {/* Rating */}
@@ -376,6 +391,14 @@ function MobileCard({ item, isTopMatch, accent }: ProductRowProps) {
           <div className="text-lg font-bold text-slate-900 leading-none">
             {formatINR(item.current_price)}
           </div>
+          {item.last_purchased_price !== null && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-slate-500 whitespace-nowrap">
+                {STRINGS.columnLastPaid}: {formatINR(item.last_purchased_price)}
+              </span>
+              <PriceTrend current={item.current_price} lastPaid={item.last_purchased_price} />
+            </div>
+          )}
           <div className="mt-1.5">
             <RatingStars rating={item.rating} />
           </div>

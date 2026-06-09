@@ -22,6 +22,7 @@ export interface ProductListing {
   source: string;
   current_price: number | null;
   original_price: number | null;
+  last_purchased_price: number | null;
   discount: number | null;
   rating: string | null;
   review_count: number | null;

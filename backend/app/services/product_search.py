@@ -86,6 +86,7 @@ def _score(record: dict) -> tuple[int, int]:
 def _normalize(record: dict, today: date | None = None) -> ProductListing:
     current_price = _safe_float(_ci_get(record, "Current_Price__c"))
     original_price = _safe_float(_ci_get(record, "Original_Price__c"))
+    last_purchased_price = _safe_float(_ci_get(record, "Last_Purchased_Price__c"))
     discount = _safe_int(_ci_get(record, "Discount__c"))
 
     if (
@@ -114,6 +115,7 @@ def _normalize(record: dict, today: date | None = None) -> ProductListing:
         source=_ci_get(record, "Source__c") or "",
         current_price=current_price,
         original_price=original_price,
+        last_purchased_price=last_purchased_price,
         discount=discount,
         rating=str(rating_value) if rating_value is not None else None,
         review_count=_safe_int(_ci_get(record, "Review_Count__c")),

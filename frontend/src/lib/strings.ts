@@ -24,6 +24,8 @@ export const STRINGS = {
   columnName: "Product",
   columnSource: "Store",
   columnCurrentPrice: "Price",
+  columnLastPaid: "Last Paid",
+  columnTrend: "Trend",
   columnRating: "Rating",
   columnAvailability: "Availability",
   columnLastOrdered: "Last Ordered",

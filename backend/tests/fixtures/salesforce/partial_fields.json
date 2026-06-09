@@ -26,6 +26,7 @@
       "Source__c": "Reliance Digital",
       "Current_Price__c": 59999,
       "Original_Price__c": 69999,
+      "Last_Purchased_Price__c": 64999,
       "Discount__c": null,
       "Rating__c": "4.0",
       "Review_Count__c": 80,
