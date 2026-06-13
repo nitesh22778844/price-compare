@@ -46,16 +46,62 @@ describe("useProductSearch", () => {
     expect(result.current.error).toBeNull();
   });
 
-  it("sets error on fetch failure", async () => {
+  it("sets error on fetch failure and returns -1", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ detail: "Service down" }), { status: 502 })
     );
 
     const { result } = renderHook(() => useProductSearch());
-    await act(async () => { await result.current.search({ query: "test" }); });
+    let count = 0;
+    await act(async () => { count = await result.current.search({ query: "test" }); });
 
+    expect(count).toBe(-1);
     expect(result.current.error).not.toBeNull();
     expect(result.current.results).toEqual([]);
     expect(result.current.loading).toBe(false);
+  });
+
+  it("search returns the result count and tags searchedVia salesforce", async () => {
+    const mockResults = [
+      {
+        id: "1", title: "Phone", source: "Amazon",
+        current_price: 5000, original_price: null, discount: null,
+        rating: null, review_count: null, rank: null, product_url: null,
+      },
+    ];
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ results: mockResults }), { status: 200 })
+    );
+
+    const { result } = renderHook(() => useProductSearch());
+    let count = 0;
+    await act(async () => { count = await result.current.search({ query: "test" }); });
+
+    expect(count).toBe(1);
+    expect(result.current.searchedVia).toBe("salesforce");
+  });
+
+  it("searchFlipkart sets results and tags searchedVia flipkart", async () => {
+    const mockResults = [
+      {
+        id: "fk1", title: "Phone", source: "Flipkart",
+        current_price: 5000, original_price: null, discount: null,
+        rating: null, review_count: null, rank: null, product_url: null,
+        buy_suggestion: "new",
+      },
+    ];
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ results: mockResults }), { status: 200 })
+    );
+
+    const { result } = renderHook(() => useProductSearch());
+    await act(async () => { await result.current.searchFlipkart({ query: "test" }); });
+
+    expect(spy).toHaveBeenCalledWith(
+      "/api/products/search/flipkart",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(result.current.results).toHaveLength(1);
+    expect(result.current.searchedVia).toBe("flipkart");
   });
 });

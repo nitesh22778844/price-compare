@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     refresh_flipkart_url: str = ""
     refresh_orders: int = 2  # POST body: {"orders": <n>}
 
+    # Flipkart live keyword search — fallback when the Salesforce catalog is empty.
+    # External service: GET ?name=<product> → Flipkart products as JSON.
+    search_product_flipkart_url: str = ""
+
     # Recommendation engine ("next purchase" insights) — external service
     recommendation_api_url: str = (
         "https://insight-generation-production.up.railway.app/api/insights/next-purchase"

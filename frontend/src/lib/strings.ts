@@ -15,6 +15,10 @@ export const STRINGS = {
   typingIndicatorLabel: "Searching...",
   assistantName: "PriceBot",
 
+  flipkartFallbackMessage:
+    "I couldn't find that in our catalog, so I'm searching Flipkart for live results…",
+  liveFlipkartBadge: "Live from Flipkart",
+
   tableEmptyHeading: "No products found",
   tableEmptySubtext: "Try a different search term or broaden your query.",
   tableLoadingLabel: "Loading results...",

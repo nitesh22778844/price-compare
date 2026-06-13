@@ -21,25 +21,29 @@ describe("useCart", () => {
 
   it("adds an item and reflects it in count and has()", () => {
     const { result } = renderHook(() => useCart(), { wrapper });
-    act(() => result.current.add({ name: "Amul Gold Milk", source: "Flipkart" }));
+    act(() => result.current.add({ id: "p1", name: "Amul Gold Milk", source: "Flipkart" }));
     expect(result.current.count).toBe(1);
-    expect(result.current.has("Amul Gold Milk")).toBe(true);
+    expect(result.current.has("p1")).toBe(true);
   });
 
-  it("dedupes by name case-insensitively", () => {
+  it("dedupes by id, not by name", () => {
     const { result } = renderHook(() => useCart(), { wrapper });
-    act(() => result.current.add({ name: "Amul Gold Milk", source: "Flipkart" }));
-    act(() => result.current.add({ name: "amul gold milk", source: "Amazon" }));
+    // same id added twice → one item
+    act(() => result.current.add({ id: "p1", name: "Amul Gold Milk", source: "Flipkart" }));
+    act(() => result.current.add({ id: "p1", name: "Amul Gold Milk", source: "Flipkart" }));
     expect(result.current.count).toBe(1);
-    expect(result.current.has("AMUL GOLD MILK")).toBe(true);
+    // same name but different id → kept as a separate item (e.g. two Flipkart rows)
+    act(() => result.current.add({ id: "p2", name: "Amul Gold Milk", source: "Amazon" }));
+    expect(result.current.count).toBe(2);
+    expect(result.current.has("p2")).toBe(true);
   });
 
-  it("removes an item by name", () => {
+  it("removes an item by id", () => {
     const { result } = renderHook(() => useCart(), { wrapper });
-    act(() => result.current.add({ name: "Tata Salt 1kg", source: null }));
-    act(() => result.current.remove("tata salt 1kg"));
+    act(() => result.current.add({ id: "p1", name: "Tata Salt 1kg", source: null }));
+    act(() => result.current.remove("p1"));
     expect(result.current.count).toBe(0);
-    expect(result.current.has("Tata Salt 1kg")).toBe(false);
+    expect(result.current.has("p1")).toBe(false);
   });
 
   it("checkout posts names, then clears the cart and sets success", async () => {
@@ -48,8 +52,8 @@ describe("useCart", () => {
       .mockResolvedValue({ submitted: 2, detail: "Submitted 2 item(s) to Flipkart." });
 
     const { result } = renderHook(() => useCart(), { wrapper });
-    act(() => result.current.add({ name: "Amul Gold Milk", source: "Flipkart" }));
-    act(() => result.current.add({ name: "Aashirvaad Atta 5kg", source: "Flipkart" }));
+    act(() => result.current.add({ id: "p1", name: "Amul Gold Milk", source: "Flipkart" }));
+    act(() => result.current.add({ id: "p2", name: "Aashirvaad Atta 5kg", source: "Flipkart" }));
 
     await act(async () => { await result.current.checkout(); });
 
@@ -65,7 +69,7 @@ describe("useCart", () => {
     vi.spyOn(api, "checkoutCart").mockRejectedValue(new Error("order service down"));
 
     const { result } = renderHook(() => useCart(), { wrapper });
-    act(() => result.current.add({ name: "Amul Gold Milk", source: "Flipkart" }));
+    act(() => result.current.add({ id: "p1", name: "Amul Gold Milk", source: "Flipkart" }));
 
     await act(async () => { await result.current.checkout(); });
 

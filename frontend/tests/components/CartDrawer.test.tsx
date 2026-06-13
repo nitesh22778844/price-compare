@@ -9,10 +9,23 @@ function Seeded({ names }: { names: string[] }) {
   const { add } = useCart();
   return (
     <>
-      <button onClick={() => names.forEach((n) => add({ name: n, source: "Flipkart" }))}>
+      <button onClick={() => names.forEach((n) => add({ id: n, name: n, source: "Flipkart" }))}>
         seed
       </button>
       <CartDrawer open onClose={() => {}} />
+    </>
+  );
+}
+
+/** Like Seeded, but lets the test observe the drawer's onClose. */
+function SeededWithClose({ names, onClose }: { names: string[]; onClose: () => void }) {
+  const { add } = useCart();
+  return (
+    <>
+      <button onClick={() => names.forEach((n) => add({ id: n, name: n, source: "Flipkart" }))}>
+        seed
+      </button>
+      <CartDrawer open onClose={onClose} />
     </>
   );
 }
@@ -54,6 +67,23 @@ describe("CartDrawer", () => {
     expect(screen.queryByText("Amul Gold Milk")).not.toBeInTheDocument();
   });
 
+  it("shows the busy/error message and keeps the cart when checkout fails", async () => {
+    const busyMsg =
+      "An order is already being processed. Please wait a few seconds and submit again.";
+    vi.spyOn(api, "checkoutCart").mockRejectedValue(new Error(busyMsg));
+    render(
+      <CartProvider>
+        <Seeded names={["Amul Gold Milk"]} />
+      </CartProvider>,
+    );
+    fireEvent.click(screen.getByText("seed"));
+    fireEvent.click(screen.getByRole("button", { name: /submit order/i }));
+
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(busyMsg));
+    // cart is preserved so the user can retry
+    expect(screen.getByText("Amul Gold Milk")).toBeInTheDocument();
+  });
+
   it("submits the order and shows the confirmation", async () => {
     vi.spyOn(api, "checkoutCart").mockResolvedValue({
       submitted: 1,
@@ -71,5 +101,25 @@ describe("CartDrawer", () => {
       expect(screen.getByText(/submitted 1 item/i)).toBeInTheDocument(),
     );
     expect(api.checkoutCart).toHaveBeenCalledWith({ products: ["Amul Gold Milk"] });
+  });
+
+  it("clears the cart and closes the drawer after a successful submit", async () => {
+    vi.spyOn(api, "checkoutCart").mockResolvedValue({
+      submitted: 1,
+      detail: "Submitted 1 item(s) to Flipkart.",
+    });
+    const onClose = vi.fn();
+    render(
+      <CartProvider>
+        <SeededWithClose names={["Amul Gold Milk"]} onClose={onClose} />
+      </CartProvider>,
+    );
+    fireEvent.click(screen.getByText("seed"));
+    fireEvent.click(screen.getByRole("button", { name: /submit order/i }));
+
+    // cart empties on success
+    await waitFor(() => expect(screen.queryByText("Amul Gold Milk")).not.toBeInTheDocument());
+    // and the drawer auto-closes shortly after
+    await waitFor(() => expect(onClose).toHaveBeenCalled(), { timeout: 2000 });
   });
 });

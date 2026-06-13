@@ -73,6 +73,8 @@ export interface UIMessage extends ChatMessage {
 }
 
 export interface CartItem {
+  /** Stable unique identifier (the product listing id) — cart membership is keyed on this. */
+  id: string;
   name: string;
   source: string | null;
 }

@@ -3,15 +3,17 @@ import { useCart } from "../../hooks/useCart";
 import { STRINGS } from "../../lib/strings";
 
 interface Props {
+  /** Stable unique id of the product (listing id) — cart membership is keyed on this. */
+  id: string;
   name: string;
   source: string | null;
   /** "sm" for dense table rows, "md" for cards. */
   size?: "sm" | "md";
 }
 
-export function AddToCartButton({ name, source, size = "sm" }: Props) {
+export function AddToCartButton({ id, name, source, size = "sm" }: Props) {
   const { has, add, remove } = useCart();
-  const inCart = has(name);
+  const inCart = has(id);
 
   const pad = size === "sm" ? "px-2.5 py-1" : "px-3 py-1.5";
   const icon = size === "sm" ? 12 : 14;
@@ -21,7 +23,7 @@ export function AddToCartButton({ name, source, size = "sm" }: Props) {
       type="button"
       aria-pressed={inCart}
       aria-label={inCart ? `${STRINGS.removeFromCart}: ${name}` : `${STRINGS.addToCart}: ${name}`}
-      onClick={() => (inCart ? remove(name) : add({ name, source }))}
+      onClick={() => (inCart ? remove(id) : add({ id, name, source }))}
       className={`inline-flex items-center gap-1 ${pad} rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
         inCart
           ? "text-emerald-300 bg-emerald-400/15 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25"

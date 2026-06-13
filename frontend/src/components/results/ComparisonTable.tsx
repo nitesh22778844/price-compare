@@ -324,7 +324,7 @@ function ProductRow({ item, isTopMatch, accent }: ProductRowProps) {
 
       {/* Add to cart */}
       <td className="px-4 py-2.5 whitespace-nowrap">
-        <AddToCartButton name={item.title} source={item.source} />
+        <AddToCartButton id={item.id} name={item.title} source={item.source} />
       </td>
     </tr>
   );
@@ -404,7 +404,7 @@ function MobileCard({ item, isTopMatch, accent }: ProductRowProps) {
           </div>
         </div>
         <div className="flex-shrink-0 flex items-center gap-2">
-          <AddToCartButton name={item.title} source={item.source} size="md" />
+          <AddToCartButton id={item.id} name={item.title} source={item.source} size="md" />
           {item.product_url && (
             <a
               href={item.product_url}

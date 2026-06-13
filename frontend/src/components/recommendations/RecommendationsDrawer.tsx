@@ -269,7 +269,12 @@ function RecommendationCard({ item }: { item: RecommendationItem }) {
       )}
 
       <div className="flex items-center gap-3 mt-3">
-        <AddToCartButton name={item.product_name} source={source} size="md" />
+        <AddToCartButton
+          id={item.product_url ?? item.product_name}
+          name={item.product_name}
+          source={source}
+          size="md"
+        />
         {item.product_url && (
           <a
             href={item.product_url}

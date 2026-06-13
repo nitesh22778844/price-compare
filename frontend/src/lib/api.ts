@@ -36,6 +36,8 @@ export const api = {
   chat: (req: ChatRequest): Promise<ChatResponse> => post("/chat", req),
   searchProducts: (query: ProductQuery): Promise<ProductSearchResponse> =>
     post("/products/search", query),
+  searchProductsFlipkart: (query: ProductQuery): Promise<ProductSearchResponse> =>
+    post("/products/search/flipkart", query),
   getRecommendations: (
     req: RecommendationRequest,
   ): Promise<RecommendationResponse> => post("/recommendations/next-purchase", req),

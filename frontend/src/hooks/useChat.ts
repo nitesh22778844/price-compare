@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import type { UIMessage } from "../lib/types";
 import { api } from "../lib/api";
+import { STRINGS } from "../lib/strings";
 import { useProductSearch } from "./useProductSearch";
 
 let _idCounter = 0;
@@ -39,7 +40,12 @@ export function useChat() {
         addMessage("assistant", chatResp.reply);
 
         if (chatResp.product_query) {
-          await productSearch.search(chatResp.product_query);
+          const count = await productSearch.search(chatResp.product_query);
+          // Nothing in the internal catalog → fall back to live Flipkart results.
+          if (count === 0) {
+            addMessage("assistant", STRINGS.flipkartFallbackMessage);
+            await productSearch.searchFlipkart(chatResp.product_query);
+          }
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";

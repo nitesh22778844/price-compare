@@ -26,6 +26,14 @@ export function CartDrawer({ open, onClose }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose, resetStatus]);
 
+  // After a successful submit the cart is already cleared; briefly show the
+  // confirmation, then close the drawer so the user lands back on the results.
+  useEffect(() => {
+    if (!open || !success) return;
+    const t = setTimeout(onClose, 1100);
+    return () => clearTimeout(t);
+  }, [open, success, onClose]);
+
   return (
     <>
       {/* Backdrop */}
@@ -81,7 +89,7 @@ export function CartDrawer({ open, onClose }: Props) {
                 const theme = item.source ? getSourceTheme(item.source) : null;
                 return (
                   <li
-                    key={item.name}
+                    key={item.id}
                     className="glass-panel rounded-xl p-3 flex items-center gap-3"
                     style={theme ? { borderLeft: `3px solid ${theme.accent}` } : undefined}
                   >
@@ -100,7 +108,7 @@ export function CartDrawer({ open, onClose }: Props) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => remove(item.name)}
+                      onClick={() => remove(item.id)}
                       aria-label={`${STRINGS.removeFromCart}: ${item.name}`}
                       className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-rose-300 hover:bg-rose-500/15 transition-colors"
                     >
@@ -129,7 +137,7 @@ export function CartDrawer({ open, onClose }: Props) {
               role="alert"
               className="text-xs font-medium text-rose-300 bg-rose-500/15 ring-1 ring-rose-400/30 rounded-lg px-3 py-2"
             >
-              {STRINGS.cartSubmitError}: {error}
+              {error}
             </p>
           )}
           <button

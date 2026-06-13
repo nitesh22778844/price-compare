@@ -12,11 +12,20 @@ class _RedactingFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         try:
             settings = get_settings()
-            for attr in self._redact_attrs:
-                secret = getattr(settings, attr, None)
-                if secret and len(secret) > 8:
-                    record.msg = str(record.msg).replace(secret, "***REDACTED***")
-                    record.args = ()
+            secrets = [
+                secret
+                for attr in self._redact_attrs
+                if (secret := getattr(settings, attr, None)) and len(secret) > 8
+            ]
+            if secrets:
+                # Render the message (applying %-args) *before* redacting, then
+                # drop args. Clearing args first would leave %s placeholders
+                # unsubstituted in the output.
+                message = record.getMessage()
+                for secret in secrets:
+                    message = message.replace(secret, "***REDACTED***")
+                record.msg = message
+                record.args = ()
         except Exception:
             pass
         return True

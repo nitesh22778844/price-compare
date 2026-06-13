@@ -8,14 +8,14 @@ const renderWithCart = (ui: ReactNode) => render(<CartProvider>{ui}</CartProvide
 
 describe("AddToCartButton", () => {
   it("renders Add when not in the cart", () => {
-    renderWithCart(<AddToCartButton name="Amul Gold Milk" source="Flipkart" />);
+    renderWithCart(<AddToCartButton id="p1" name="Amul Gold Milk" source="Flipkart" />);
     const btn = screen.getByRole("button");
     expect(btn).toHaveTextContent(/add/i);
     expect(btn).toHaveAttribute("aria-pressed", "false");
   });
 
   it("toggles to Added on click", () => {
-    renderWithCart(<AddToCartButton name="Amul Gold Milk" source="Flipkart" />);
+    renderWithCart(<AddToCartButton id="p1" name="Amul Gold Milk" source="Flipkart" />);
     const btn = screen.getByRole("button");
     fireEvent.click(btn);
     expect(btn).toHaveTextContent(/added/i);
@@ -23,7 +23,7 @@ describe("AddToCartButton", () => {
   });
 
   it("removes from cart on second click", () => {
-    renderWithCart(<AddToCartButton name="Amul Gold Milk" source="Flipkart" />);
+    renderWithCart(<AddToCartButton id="p1" name="Amul Gold Milk" source="Flipkart" />);
     const btn = screen.getByRole("button");
     fireEvent.click(btn);
     fireEvent.click(btn);

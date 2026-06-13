@@ -6,12 +6,12 @@ import { api } from "../lib/api";
 interface CartContextValue {
   items: CartItem[];
   count: number;
-  /** Add a product to the cart (no-op if its name is already present). */
+  /** Add a product to the cart (no-op if its id is already present). */
   add: (item: CartItem) => void;
-  /** Remove a product by name. */
-  remove: (name: string) => void;
-  /** Whether a product name is already in the cart. */
-  has: (name: string) => boolean;
+  /** Remove a product by id. */
+  remove: (id: string) => void;
+  /** Whether a product id is already in the cart. */
+  has: (id: string) => boolean;
   clear: () => void;
   /** POST every cart item's name to the backend; clears the cart on success. */
   checkout: () => Promise<void>;
@@ -25,8 +25,6 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -34,20 +32,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const has = useCallback(
-    (name: string) => items.some((i) => sameName(i.name, name)),
+    (id: string) => items.some((i) => i.id === id),
     [items],
   );
 
   const add = useCallback((item: CartItem) => {
     setItems((prev) =>
-      prev.some((i) => sameName(i.name, item.name)) ? prev : [...prev, item],
+      prev.some((i) => i.id === item.id) ? prev : [...prev, item],
     );
     setSuccess(null);
     setError(null);
   }, []);
 
-  const remove = useCallback((name: string) => {
-    setItems((prev) => prev.filter((i) => !sameName(i.name, name)));
+  const remove = useCallback((id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
   const clear = useCallback(() => setItems([]), []);

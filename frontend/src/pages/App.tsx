@@ -8,6 +8,7 @@ import { ComparisonTable } from "../components/results/ComparisonTable";
 import { RecommendationsDrawer } from "../components/recommendations/RecommendationsDrawer";
 import { CartDrawer } from "../components/cart/CartDrawer";
 import { STRINGS } from "../lib/strings";
+import { getSourceTheme } from "../lib/source-theme";
 
 type MobileTab = "chat" | "results";
 
@@ -125,9 +126,20 @@ export default function App() {
           {/* Pane header */}
           <div className="px-4 sm:px-6 py-4 border-b border-white/10 glass flex items-center justify-between flex-shrink-0">
             <div>
-              <h2 className="text-[15px] font-semibold text-white tracking-tight">
-                Product Comparison
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[15px] font-semibold text-white tracking-tight">
+                  Product Comparison
+                </h2>
+                {productSearch.searchedVia === "flipkart" && resultCount > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full text-white"
+                    style={{ backgroundColor: getSourceTheme("Flipkart").accent }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/90 animate-pulse" />
+                    {STRINGS.liveFlipkartBadge}
+                  </span>
+                )}
+              </div>
               {resultCount > 0 ? (
                 <p className="text-xs text-white/60 mt-1">
                   <span className="text-white font-medium">{resultCount}</span> result
